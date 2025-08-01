@@ -20,10 +20,6 @@ const fontAwesomeDomains = [
     'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/webfonts'
 ];
 
-// Add icon paths to the cache list
-for (let i = 72; i <= 512; i = i * 1.5) {
-  urlsToCache.push(`/icons/icon-${Math.round(i)}.png`);
-}
 
 self.addEventListener('install', event => {
     console.log('Service Worker: Installing...');
@@ -31,7 +27,7 @@ self.addEventListener('install', event => {
         caches.open(CACHE_NAME)
             .then(cache => {
                 console.log('Service Worker: Caching all core assets');
-                return cache.addAll(urlsToCache);
+                return cache.addAll(PRECACHE_URLS);
             })
             .catch(err => {
                 console.error('Service Worker: Failed to cache assets', err);

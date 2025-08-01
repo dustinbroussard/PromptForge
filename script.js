@@ -243,6 +243,7 @@ class PromptForgeApp {
     }
 
     handleFilterAndSort() {
+        this.searchTerm = this.dom.searchInput.value.trim();
         this.filterPrompts();
         this.sortPrompts();
         this.renderPrompts();
