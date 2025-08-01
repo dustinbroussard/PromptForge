@@ -1,15 +1,18 @@
-const CACHE_NAME = 'promptforge-cache-v1';
+const CACHE_NAME = 'promptforge-cache-v2';
+const PRECACHE_URLS = [
+  '/',
+  '/index.html',
+  '/offline.html',
+  '/style.css',
+  '/script.js',
+  '/manifest.webmanifest',
+  'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap',
+  'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css'
+];
 
-// List all core assets to cache on install
-const urlsToCache = [
-    '/',
-    '/index.html',
-    '/offline.html',
-    '/style.css',
-    '/script.js',
-    'https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap',
-    'https://fonts.gstatic.com',
-    'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css'
+// Cache Font Awesome fonts
+const FONT_AWESOME_DOMAINS = [
+  'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/webfonts'
 ];
 
 // Cache all Font Awesome fonts
@@ -53,6 +56,13 @@ self.addEventListener('activate', event => {
 });
 
 self.addEventListener('fetch', event => {
+    // Skip cross-origin requests
+    if (!event.request.url.startsWith(self.location.origin) && 
+        !FONT_AWESOME_DOMAINS.some(domain => event.request.url.startsWith(domain))) {
+        return;
+    }
+
+    // Network-first strategy for API calls
     // Check if the request is for the OpenRouter API
     const openrouterUrl = 'https://openrouter.ai/api/v1/';
     if (event.request.url.startsWith(openrouterUrl)) {

@@ -73,15 +73,22 @@ class PromptForgeApp {
             e.preventDefault();
             deferredPrompt = e;
             
-            if (!window.matchMedia('(display-mode: standalone)').matches && !this.installPromptShown) {
+            // Check if already installed
+            const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+            const isAppInstalled = window.navigator.standalone || isStandalone;
+            
+            // Only show if not installed and not shown yet this session
+            if (!isAppInstalled && !sessionStorage.getItem('installPromptShown')) {
                 this.showInstallPrompt();
+                sessionStorage.setItem('installPromptShown', 'true');
             }
         });
         
-        // Detect if the PWA is already installed
         window.addEventListener('appinstalled', () => {
             console.log('PWA installed successfully');
-            this.installPromptShown = true;
+            // Clear the prompt state in both session and local storage
+            sessionStorage.removeItem('installPromptShown');
+            localStorage.removeItem('installPromptDismissed');
         });
     }
 
