@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no">
+    <meta name="manifest" content="/manifest.json">
     <meta name="theme-color" content="#111827">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -11,7 +12,6 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="description" content="AI Prompt Management System">
     <meta name="msapplication-TileColor" content="#111827">
-    <link rel="manifest" href="/manifest.webmanifest">
     <link rel="apple-touch-icon" href="/icons/icon-192.png">
     <title>PromptForge</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -19,6 +19,61 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <link rel="stylesheet" href="style.css">
+    <style>
+        /* Install Modal Styles */
+        .install-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            backdrop-filter: blur(4px);
+        }
+
+        .install-modal-content {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 32px;
+            max-width: 400px;
+            text-align: center;
+            animation: slideUp 0.3s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .install-modal-content h3 {
+            margin-bottom: 16px;
+            color: var(--text-primary);
+            font-size: 1.5rem;
+        }
+
+        .install-modal-content p {
+            margin-bottom: 24px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        .install-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+        }
+    </style>
 </head>
 <body>
     <header class="header">
@@ -34,45 +89,47 @@
                 <button class="header-btn" id="settings-btn" title="Settings">
                     <i class="fas fa-cog"></i>
                 </button>
-                </div>
-            </header>
-
-            <div id="ai-settings-modal" class="modal">
-                <div class="modal-overlay"></div>
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h2 class="modal-title">AI Enhancement Settings</h2>
-                        <button class="close-modal"><i class="fas fa-times"></i></button>
-                    </div>
-                    <div class="modal-body">
-                        <form id="ai-settings-form">
-                            <div class="form-group">
-                                <label for="openrouter-api-key">OpenRouter API Key</label>
-                                <input type="password" id="openrouter-api-key" placeholder="sk-or-...">
-                            </div>
-                            <div class="form-group">
-                                <label for="ai-model-select">AI Model</label>
-                                <select id="ai-model-select" class="form-select">
-                                    <option value="">Select a model</option>
-                                </select>
-                                <div id="model-loading-spinner" style="display: none;">
-                                    <i class="fas fa-spinner fa-spin"></i> Loading models...
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label for="enhancement-prompt">Enhancement Prompt</label>
-                                <textarea id="enhancement-prompt" rows="5" placeholder="Enter system prompt for enhancement..."></textarea>
-                            </div>
-                            <div class="form-actions">
-                                <button type="submit" id="save-ai-settings" class="action-btn primary">Save Settings</button>
-                            </div>
-                        </form>
-                    </div>
-                </div>
-            </div>
             </div>
         </div>
     </header>
+
+    <!-- AI Settings Modal -->
+    <div id="ai-settings-modal" class="modal">
+        <div class="modal-overlay"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">AI Enhancement Settings</h2>
+                <button class="close-modal"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <form id="ai-settings-form">
+                    <div class="form-group">
+                        <label for="openrouter-api-key">OpenRouter API Key</label>
+                        <input type="password" id="openrouter-api-key" placeholder="sk-or-..." required>
+                        <small style="color: var(--text-muted); display: block; margin-top: 4px;">
+                            Get your free API key from <a href="https://openrouter.ai" target="_blank" style="color: var(--accent-primary);">openrouter.ai</a>
+                        </small>
+                    </div>
+                    <div class="form-group">
+                        <label for="ai-model-select">AI Model</label>
+                        <select id="ai-model-select" class="form-select" required>
+                            <option value="">Select a model</option>
+                        </select>
+                        <div id="model-loading-spinner" style="display: none; margin-top: 8px; color: var(--text-muted);">
+                            <i class="fas fa-spinner fa-spin"></i> Loading models...
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="enhancement-prompt">Enhancement Prompt</label>
+                        <textarea id="enhancement-prompt" rows="5" placeholder="Enter system prompt for enhancement..."></textarea>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" id="save-ai-settings" class="action-btn primary">Save Settings</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 
     <main class="main-container">
         <section class="new-prompt-section">
@@ -110,7 +167,7 @@
         </section>
 
         <section class="prompts-grid" id="prompts-grid">
-            </section>
+        </section>
         
         <div id="empty-state" class="empty-state" style="display: none;">
             <i class="fas fa-box-open empty-icon"></i>
@@ -119,6 +176,7 @@
         </div>
     </main>
     
+    <!-- Prompt Detail Modal -->
     <div id="prompt-detail-modal" class="modal">
         <div class="modal-overlay"></div>
         <div class="modal-content">
@@ -138,6 +196,7 @@
         </div>
     </div>
 
+    <!-- New/Edit Prompt Modal -->
     <div id="new-edit-prompt-modal" class="modal">
         <div class="modal-overlay"></div>
         <div class="modal-content">

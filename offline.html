@@ -2,90 +2,140 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no">
-    <meta name="theme-color" content="#1a1a1a">
-    <title>PromptForge (Offline)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#111827">
+    <title>PromptForge - Offline</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-    <link rel="stylesheet" href="style.css">
+    <style>
+        :root {
+            --bg-primary: #000000;
+            --bg-secondary: #0a0a0a;
+            --bg-tertiary: #111111;
+            --text-primary: #ffffff;
+            --text-secondary: #cccccc;
+            --text-muted: #888888;
+            --accent-primary: #ffffff;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .offline-container {
+            text-align: center;
+            max-width: 500px;
+        }
+
+        .offline-icon {
+            font-size: 4rem;
+            margin-bottom: 24px;
+            opacity: 0.7;
+        }
+
+        .offline-title {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 16px;
+            color: var(--text-primary);
+        }
+
+        .offline-text {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            line-height: 1.6;
+            margin-bottom: 32px;
+        }
+
+        .offline-button {
+            background: var(--accent-primary);
+            color: var(--bg-primary);
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: opacity 0.2s ease;
+        }
+
+        .offline-button:hover {
+            opacity: 0.9;
+        }
+
+        .feature-list {
+            text-align: left;
+            margin-top: 32px;
+            padding: 24px;
+            background: var(--bg-secondary);
+            border-radius: 12px;
+        }
+
+        .feature-list h3 {
+            color: var(--text-primary);
+            margin-bottom: 16px;
+        }
+
+        .feature-list ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .feature-list li {
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+            padding-left: 20px;
+            position: relative;
+        }
+
+        .feature-list li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #00ff88;
+            font-weight: bold;
+        }
+    </style>
 </head>
 <body>
-    <header class="header">
-        <div class="header-content">
-            <div class="header-title">
-                <i class="fas fa-hammer header-icon"></i>
-                <h1>PromptForge</h1>
-            </div>
-            <div class="header-actions">
-                </div>
-        </div>
-    </header>
-
-    <main class="main-container">
-        <div class="empty-state">
-            <i class="fas fa-wifi-slash empty-icon"></i>
-            <h2 class="empty-title">You are Offline</h2>
-            <p class="empty-text">
-                PromptForge is available offline!
-                <br>
-                Your saved prompts are ready and waiting.
+    <div class="offline-container">
+        <div class="offline-icon">🔌</div>
+        <h1 class="offline-title">You're Offline</h1>
+        <p class="offline-text">
+            No internet connection detected. Don't worry though - PromptForge works offline! 
+            All your saved prompts are still available.
+        </p>
+        <button class="offline-button" onclick="window.location.href='/'">
+            Go to PromptForge
+        </button>
+        
+        <div class="feature-list">
+            <h3>Available Offline:</h3>
+            <ul>
+                <li>View all your saved prompts</li>
+                <li>Create and edit prompts</li>
+                <li>Search and filter prompts</li>
+                <li>Copy prompts to clipboard</li>
+                <li>Export your prompt library</li>
+            </ul>
+            <p style="margin-top: 16px; color: var(--text-muted); font-size: 0.9rem;">
+                Note: AI enhancement features require an internet connection.
             </p>
         </div>
-        <section class="prompts-grid" id="prompts-grid">
-            </section>
-    </main>
-
-    <script src="script.js"></script>
-    <script>
-        // Special logic for offline mode
-        document.addEventListener('DOMContentLoaded', () => {
-            // Re-use the existing app class, but handle UI differently
-            const app = new PromptForgeApp();
-            app.dom.promptsGrid.style.display = 'grid';
-            app.dom.emptyState.style.display = 'none';
-
-            // Override the default bindEvents and renderPrompts
-            // so we don't try to load the online-only UI
-            app.bindEvents = () => {
-                console.log('Offline mode: Events not bound for online features.');
-            };
-
-            app.renderPrompts = () => {
-                // Just render the prompts that are already available
-                if (app.prompts.length === 0) {
-                    app.dom.promptsGrid.style.display = 'none';
-                    app.dom.emptyState.style.display = 'flex';
-                    app.dom.emptyState.innerHTML = `
-                        <i class="fas fa-box-open empty-icon"></i>
-                        <h2 class="empty-title">No Prompts Found</h2>
-                        <p class="empty-text">Your local prompt library is empty. Go online to create and save new ones!</p>
-                    `;
-                    return;
-                }
-                
-                app.dom.promptsGrid.style.display = 'grid';
-                app.dom.emptyState.style.display = 'none';
-
-                app.dom.promptsGrid.innerHTML = app.prompts.map(prompt => app.createPromptCard(prompt)).join('');
-                // Since the modal and other buttons are not present, we can't bind their events.
-                // We'll just show a notification that online features are disabled.
-                document.querySelectorAll('.prompt-card').forEach(card => {
-                    card.addEventListener('click', () => {
-                        app.showNotification('You are offline. Cannot view prompt details.', 'info');
-                    });
-                    // Disable all buttons in the card
-                    card.querySelectorAll('.action-btn').forEach(btn => {
-                        btn.disabled = true;
-                        btn.onclick = () => app.showNotification('You are offline. Actions are disabled.', 'info');
-                    });
-                });
-            };
-            
-            // Render the prompts we loaded from local storage
-            app.renderPrompts();
-        });
-    </script>
+    </div>
 </body>
 </html>

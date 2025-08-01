@@ -197,7 +197,10 @@ class PromptForgeApp {
      */
     bindEvents() {
         this.dom.newPromptBtn.addEventListener('click', () => this.showNewPromptModal());
-        this.dom.searchInput.addEventListener('input', () => this.handleFilterAndSort());
+        this.dom.searchInput.addEventListener('input', (e) => {
+            this.searchTerm = e.target.value;
+            this.handleFilterAndSort();
+        });
         this.dom.sortSelect.addEventListener('change', () => this.handleFilterAndSort());
         this.dom.exportBtn.addEventListener('click', () => this.exportPrompts());
         this.dom.promptForm.addEventListener('submit', (e) => {
@@ -238,12 +241,24 @@ class PromptForgeApp {
         if (this.dom.settingsBtn) {
             this.dom.settingsBtn.addEventListener('click', () => this.showAiSettingsModal());
         }
-        this.dom.aiSettingsForm.addEventListener('submit', (e) => this.saveAiSettings(e));
-        this.dom.enhancePromptBtn.addEventListener('click', () => this.enhancePrompt());
+        if (this.dom.aiSettingsForm) {
+            this.dom.aiSettingsForm.addEventListener('submit', (e) => this.saveAiSettings(e));
+        }
+        if (this.dom.enhancePromptBtn) {
+            this.dom.enhancePromptBtn.addEventListener('click', () => this.enhancePrompt());
+        }
+        // Add API key change listener to fetch models
+        if (this.dom.openrouterApiKey) {
+            this.dom.openrouterApiKey.addEventListener('blur', () => {
+                if (this.dom.openrouterApiKey.value.trim()) {
+                    this.aiSettings.apiKey = this.dom.openrouterApiKey.value.trim();
+                    this.fetchAiModels();
+                }
+            });
+        }
     }
 
     handleFilterAndSort() {
-        this.searchTerm = this.dom.searchInput.value.trim();
         this.filterPrompts();
         this.sortPrompts();
         this.renderPrompts();
@@ -285,6 +300,11 @@ class PromptForgeApp {
         const content = this.dom.promptContentInput.value.trim();
         const tagsInput = this.dom.promptTagsInput.value.trim();
         const tags = tagsInput ? tagsInput.split(',').map(tag => tag.trim().toLowerCase()).filter(tag => tag) : ['general'];
+
+        if (!title || !content) {
+            this.showNotification('Title and content are required!', 'error');
+            return;
+        }
 
         if (this.editingPromptId) {
             // Update existing prompt
@@ -500,8 +520,12 @@ class PromptForgeApp {
         const savedSettings = localStorage.getItem('promptForgeAiSettings');
         if (savedSettings) {
             this.aiSettings = JSON.parse(savedSettings);
-            this.dom.openrouterApiKey.value = this.aiSettings.apiKey;
-            this.dom.enhancementPrompt.value = this.aiSettings.enhancementPrompt;
+            if (this.dom.openrouterApiKey) {
+                this.dom.openrouterApiKey.value = this.aiSettings.apiKey;
+            }
+            if (this.dom.enhancementPrompt) {
+                this.dom.enhancementPrompt.value = this.aiSettings.enhancementPrompt;
+            }
             
             if (this.aiSettings.apiKey) {
                 this.fetchAiModels();
@@ -510,16 +534,22 @@ class PromptForgeApp {
     }
 
     showAiSettingsModal() {
-        this.dom.aiSettingsModal.classList.add('active');
+        if (this.dom.aiSettingsModal) {
+            this.dom.aiSettingsModal.classList.add('active');
+        }
     }
 
     async fetchAiModels() {
-        if (!this.aiSettings.apiKey) {
-            this.dom.aiModelSelect.innerHTML = '<option value="">Enter API Key first</option>';
+        if (!this.aiSettings.apiKey || !this.dom.aiModelSelect) {
+            if (this.dom.aiModelSelect) {
+                this.dom.aiModelSelect.innerHTML = '<option value="">Enter API Key first</option>';
+            }
             return;
         }
         
-        this.dom.modelLoadingSpinner.style.display = 'block';
+        if (this.dom.modelLoadingSpinner) {
+            this.dom.modelLoadingSpinner.style.display = 'block';
+        }
         this.dom.aiModelSelect.innerHTML = '<option value="">Loading models...</option>';
         
         try {
@@ -564,7 +594,9 @@ class PromptForgeApp {
             this.showNotification(`Failed to load models: ${error.message}`, 'error');
             this.dom.aiModelSelect.innerHTML = '<option value="">Error loading models</option>';
         } finally {
-            this.dom.modelLoadingSpinner.style.display = 'none';
+            if (this.dom.modelLoadingSpinner) {
+                this.dom.modelLoadingSpinner.style.display = 'none';
+            }
         }
     }
 
