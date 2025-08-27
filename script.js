@@ -31,16 +31,17 @@ class PromptForgeApp {
         };
 
         // Initialize DOM elements
-        this.dom = {
-            promptsGrid: document.getElementById('prompts-grid'),
-            searchInput: document.getElementById('search-input'),
-            newPromptBtn: document.getElementById('new-prompt-btn'),
-            filterTags: document.querySelectorAll('.filter-tag'),
-            sortSelect: document.getElementById('sort-select'),
-            exportBtn: document.getElementById('export-prompts-btn'),
-            newEditModal: document.getElementById('new-edit-prompt-modal'),
-            newEditModalTitle: document.getElementById('new-edit-modal-title'),
-            promptForm: document.getElementById('prompt-form'),
+            this.dom = {
+                promptsGrid: document.getElementById('prompts-grid'),
+                searchInput: document.getElementById('search-input'),
+                newPromptBtn: document.getElementById('new-prompt-btn'),
+                filterTags: document.querySelectorAll('.filter-tag'),
+                sortSelect: document.getElementById('sort-select'),
+                exportBtn: document.getElementById('export-prompts-btn'),
+                themeToggleBtn: document.getElementById('theme-toggle-btn'),
+                newEditModal: document.getElementById('new-edit-prompt-modal'),
+                newEditModalTitle: document.getElementById('new-edit-modal-title'),
+                promptForm: document.getElementById('prompt-form'),
             promptTitleInput: document.getElementById('prompt-title'),
             promptContentInput: document.getElementById('prompt-content'),
             promptTagsInput: document.getElementById('prompt-tags'),
@@ -63,6 +64,7 @@ class PromptForgeApp {
 
     init() {
         this.loadPrompts();
+        this.applyTheme();
         this.bindEvents();
         this.renderPrompts();
         this.setupInstallPrompt();
@@ -122,6 +124,36 @@ class PromptForgeApp {
                 this.installPromptShown = true;
                 installModal.remove();
             });
+        }
+    }
+
+    applyTheme() {
+        const savedTheme = localStorage.getItem('theme') || 'default-dark';
+        document.documentElement.setAttribute('data-theme', savedTheme);
+        const meta = document.querySelector('meta[name="theme-color"]');
+        if (meta) {
+            meta.setAttribute('content', savedTheme === 'default-light' ? '#ffffff' : '#000000');
+        }
+        if (this.dom.themeToggleBtn) {
+            this.dom.themeToggleBtn.innerHTML = savedTheme === 'default-dark'
+                ? '<i class="fas fa-sun"></i>'
+                : '<i class="fas fa-moon"></i>';
+        }
+    }
+
+    toggleTheme() {
+        const currentTheme = document.documentElement.getAttribute('data-theme') || 'default-dark';
+        const newTheme = currentTheme === 'default-dark' ? 'default-light' : 'default-dark';
+        document.documentElement.setAttribute('data-theme', newTheme);
+        localStorage.setItem('theme', newTheme);
+        const meta = document.querySelector('meta[name="theme-color"]');
+        if (meta) {
+            meta.setAttribute('content', newTheme === 'default-light' ? '#ffffff' : '#000000');
+        }
+        if (this.dom.themeToggleBtn) {
+            this.dom.themeToggleBtn.innerHTML = newTheme === 'default-dark'
+                ? '<i class="fas fa-sun"></i>'
+                : '<i class="fas fa-moon"></i>';
         }
     }
 
@@ -203,6 +235,7 @@ class PromptForgeApp {
         });
         this.dom.sortSelect.addEventListener('change', () => this.handleFilterAndSort());
         this.dom.exportBtn.addEventListener('click', () => this.exportPrompts());
+        this.dom.themeToggleBtn.addEventListener('click', () => this.toggleTheme());
         this.dom.promptForm.addEventListener('submit', (e) => {
             e.preventDefault();
             this.savePromptFromForm();
