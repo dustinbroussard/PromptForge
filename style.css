@@ -1,5 +1,5 @@
 /* AMOLED Dark Theme Variables */
-:root {
+[data-theme="default-dark"] {
     --bg-primary: #000000;
     --bg-secondary: #0a0a0a;
     --bg-tertiary: #111111;
@@ -23,6 +23,33 @@
     --info: #00aaff;
     --gradient-primary: linear-gradient(135deg, #000000 0%, #1a1a1a 100%);
     --gradient-card: linear-gradient(135deg, #111111 0%, #1a1a1a 100%);
+}
+
+/* Default Light Theme Variables */
+[data-theme="default-light"] {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f5f5f5;
+    --bg-tertiary: #e0e0e0;
+    --bg-card: #f5f5f5;
+    --bg-hover: #d0d0d0;
+    --bg-active: #c0c0c0;
+    --text-primary: #000000;
+    --text-secondary: #333333;
+    --text-muted: #666666;
+    --text-accent: #111111;
+    --accent-primary: #000000;
+    --accent-secondary: #1a1a1a;
+    --border: #cccccc;
+    --border-light: #d0d0d0;
+    --shadow: rgba(0, 0, 0, 0.05);
+    --shadow-medium: rgba(0, 0, 0, 0.1);
+    --shadow-heavy: rgba(0, 0, 0, 0.15);
+    --success: #008000;
+    --warning: #cc9900;
+    --danger: #cc0000;
+    --info: #006666;
+    --gradient-primary: linear-gradient(135deg, #ffffff 0%, #f5f5f5 100%);
+    --gradient-card: linear-gradient(135deg, #e0e0e0 0%, #f5f5f5 100%);
 }
 
 /* Reset & Base */
