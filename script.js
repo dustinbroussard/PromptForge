@@ -37,6 +37,8 @@ class PromptForgeApp {
                 newPromptBtn: document.getElementById('new-prompt-btn'),
                 filterTags: document.querySelectorAll('.filter-tag'),
                 sortSelect: document.getElementById('sort-select'),
+                importBtn: document.getElementById('import-prompts-btn'),
+                importInput: document.getElementById('import-prompts-input'),
                 exportBtn: document.getElementById('export-prompts-btn'),
                 themeToggleBtn: document.getElementById('theme-toggle-btn'),
                 newEditModal: document.getElementById('new-edit-prompt-modal'),
@@ -234,6 +236,8 @@ class PromptForgeApp {
             this.handleFilterAndSort();
         });
         this.dom.sortSelect.addEventListener('change', () => this.handleFilterAndSort());
+        this.dom.importBtn.addEventListener('click', () => this.dom.importInput.click());
+        this.dom.importInput.addEventListener('change', (e) => this.importPrompts(e));
         this.dom.exportBtn.addEventListener('click', () => this.exportPrompts());
         this.dom.themeToggleBtn.addEventListener('click', () => this.toggleTheme());
         this.dom.promptForm.addEventListener('submit', (e) => {
@@ -503,6 +507,38 @@ class PromptForgeApp {
         downloadAnchorNode.click();
         downloadAnchorNode.remove();
         this.showNotification('Prompts exported successfully!', 'success');
+    }
+
+    importPrompts(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            try {
+                const imported = JSON.parse(event.target.result);
+                if (!Array.isArray(imported)) {
+                    throw new Error('Invalid file format');
+                }
+
+                this.prompts = imported.map(p => ({
+                    ...p,
+                    preview: p.preview || this.createPreview(p.content || ''),
+                    createdAt: p.createdAt ? new Date(p.createdAt) : new Date(),
+                    lastUsed: p.lastUsed ? new Date(p.lastUsed) : new Date()
+                }));
+
+                this.savePrompts();
+                this.handleFilterAndSort();
+                this.showNotification('Prompts imported successfully!', 'success');
+            } catch (error) {
+                console.error('Import failed:', error);
+                this.showNotification(`Failed to import prompts: ${error.message}`, 'error');
+            }
+        };
+
+        reader.readAsText(file);
+        e.target.value = '';
     }
 
     closeModal(modalElement) {
