@@ -91,6 +91,9 @@
                 <button class="header-btn" id="export-prompts-btn" title="Export Prompts">
                     <i class="fas fa-file-export"></i>
                 </button>
+                <button class="header-btn" id="chat-btn" title="Test Chat">
+                    <i class="fas fa-comments"></i>
+                </button>
                 <button class="header-btn" id="theme-toggle-btn" title="Toggle Theme">
                     <i class="fas fa-sun"></i>
                 </button>
@@ -136,6 +139,24 @@
                         <button type="submit" id="save-ai-settings" class="action-btn primary">Save Settings</button>
                     </div>
                 </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chat Test Modal -->
+    <div id="chat-modal" class="modal">
+        <div class="modal-overlay"></div>
+        <div class="modal-content chat-modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Test Chat</h2>
+                <button class="close-modal"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <div id="chat-messages" class="chat-messages"></div>
+                <div class="chat-input-container">
+                    <input type="text" id="chat-input" placeholder="Type a message...">
+                    <button id="chat-send-btn" class="action-btn primary">Send</button>
+                </div>
             </div>
         </div>
     </div>
