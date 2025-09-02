@@ -40,6 +40,7 @@ class PromptForgeApp {
                 importBtn: document.getElementById('import-prompts-btn'),
                 importInput: document.getElementById('import-prompts-input'),
                 exportBtn: document.getElementById('export-prompts-btn'),
+                chatBtn: document.getElementById('chat-btn'),
                 themeToggleBtn: document.getElementById('theme-toggle-btn'),
                 newEditModal: document.getElementById('new-edit-prompt-modal'),
                 newEditModalTitle: document.getElementById('new-edit-modal-title'),
@@ -239,6 +240,9 @@ class PromptForgeApp {
         this.dom.importBtn.addEventListener('click', () => this.dom.importInput.click());
         this.dom.importInput.addEventListener('change', (e) => this.importPrompts(e));
         this.dom.exportBtn.addEventListener('click', () => this.exportPrompts());
+        this.dom.chatBtn.addEventListener('click', () => {
+            window.location.href = 'chat.html';
+        });
         this.dom.themeToggleBtn.addEventListener('click', () => this.toggleTheme());
         this.dom.promptForm.addEventListener('submit', (e) => {
             e.preventDefault();
