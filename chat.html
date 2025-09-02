@@ -69,6 +69,15 @@
             display: flex;
             gap: 10px;
         }
+        #prompt-select {
+            padding: 12px 16px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid #333;
+            border-radius: 28px;
+            color: #e0e0e0;
+            outline: none;
+            max-width: 200px;
+        }
         #user-input {
             flex: 1;
             padding: 12px 16px;
@@ -141,6 +150,7 @@
     </div>
     <div id="chat-body" class="chat-body"></div>
     <div class="chat-footer">
+        <select id="prompt-select"></select>
         <input type="text" id="user-input" placeholder="Type a message..." autocomplete="off"/>
         <button id="send-btn"><i class="fas fa-paper-plane"></i></button>
     </div>
@@ -152,6 +162,8 @@
             <input type="password" id="api-key" placeholder="sk-..." />
             <label for="model">Model</label>
             <input type="text" id="model" placeholder="qwen/qwen3-235b-a22b:free" />
+            <label for="system-prompt">System Prompt</label>
+            <input type="text" id="system-prompt" placeholder="You are a helpful assistant." />
             <div class="modal-actions">
                 <button id="save-settings">Save</button>
             </div>
@@ -166,14 +178,32 @@
         const settingsModal = document.getElementById('settings-modal');
         const apiKeyInput = document.getElementById('api-key');
         const modelInput = document.getElementById('model');
+        const systemPromptInput = document.getElementById('system-prompt');
         const saveSettings = document.getElementById('save-settings');
+        const promptSelect = document.getElementById('prompt-select');
 
         let settings = {
             apiKey: localStorage.getItem('chat_api_key') || '',
-            model: localStorage.getItem('chat_model') || 'qwen/qwen3-235b-a22b:free'
+            model: localStorage.getItem('chat_model') || 'qwen/qwen3-235b-a22b:free',
+            systemPrompt: localStorage.getItem('chat_system_prompt') || 'You are a helpful assistant.'
         };
         apiKeyInput.value = settings.apiKey;
         modelInput.value = settings.model;
+        systemPromptInput.value = settings.systemPrompt;
+
+        function loadPromptOptions() {
+            const stored = localStorage.getItem('promptForgePrompts');
+            const prompts = stored ? JSON.parse(stored) : [];
+            promptSelect.innerHTML = '<option value="">Load prompt...</option>';
+            prompts.forEach(p => {
+                const opt = document.createElement('option');
+                opt.value = p.id;
+                opt.textContent = p.title;
+                opt.dataset.content = p.content;
+                promptSelect.appendChild(opt);
+            });
+        }
+        loadPromptOptions();
 
         function displayMessage(sender, content) {
             const messageDiv = document.createElement('div');
@@ -207,7 +237,7 @@
                     body: JSON.stringify({
                         model: settings.model,
                         messages: [
-                            { role: 'system', content: 'You are a helpful assistant.' },
+                            { role: 'system', content: settings.systemPrompt },
                             { role: 'user', content: message }
                         ]
                     })
@@ -238,9 +268,19 @@
         saveSettings.addEventListener('click', () => {
             settings.apiKey = apiKeyInput.value.trim();
             settings.model = modelInput.value.trim() || 'qwen/qwen3-235b-a22b:free';
+            settings.systemPrompt = systemPromptInput.value.trim() || 'You are a helpful assistant.';
             localStorage.setItem('chat_api_key', settings.apiKey);
             localStorage.setItem('chat_model', settings.model);
+            localStorage.setItem('chat_system_prompt', settings.systemPrompt);
             settingsModal.style.display = 'none';
+        });
+        promptSelect.addEventListener('change', () => {
+            const selected = promptSelect.options[promptSelect.selectedIndex];
+            const content = selected.dataset.content || '';
+            if (content) {
+                userInput.value = content;
+                promptSelect.value = '';
+            }
         });
         window.addEventListener('click', (e) => {
             if (e.target === settingsModal) settingsModal.style.display = 'none';
