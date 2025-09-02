@@ -30,8 +30,6 @@ class PromptForgeApp {
                               'PROMPT TO IMPROVE:'
         };
 
-        this.chatHistory = [];
-
         // Initialize DOM elements
             this.dom = {
                 promptsGrid: document.getElementById('prompts-grid'),
@@ -42,7 +40,6 @@ class PromptForgeApp {
                 importBtn: document.getElementById('import-prompts-btn'),
                 importInput: document.getElementById('import-prompts-input'),
                 exportBtn: document.getElementById('export-prompts-btn'),
-                chatBtn: document.getElementById('chat-btn'),
                 themeToggleBtn: document.getElementById('theme-toggle-btn'),
                 newEditModal: document.getElementById('new-edit-prompt-modal'),
                 newEditModalTitle: document.getElementById('new-edit-modal-title'),
@@ -61,11 +58,7 @@ class PromptForgeApp {
             detailDeleteBtn: document.getElementById('modal-delete-prompt-btn'),
             emptyState: document.getElementById('empty-state'),
             notificationContainer: document.getElementById('notification-container'),
-            closeModalBtns: document.querySelectorAll('.close-modal'),
-            chatModal: document.getElementById('chat-modal'),
-            chatMessages: document.getElementById('chat-messages'),
-            chatInput: document.getElementById('chat-input'),
-            chatSendBtn: document.getElementById('chat-send-btn')
+            closeModalBtns: document.querySelectorAll('.close-modal')
         };
         
         this.init();
@@ -246,9 +239,6 @@ class PromptForgeApp {
         this.dom.importBtn.addEventListener('click', () => this.dom.importInput.click());
         this.dom.importInput.addEventListener('change', (e) => this.importPrompts(e));
         this.dom.exportBtn.addEventListener('click', () => this.exportPrompts());
-        if (this.dom.chatBtn) {
-            this.dom.chatBtn.addEventListener('click', () => this.showChatModal());
-        }
         this.dom.themeToggleBtn.addEventListener('click', () => this.toggleTheme());
         this.dom.promptForm.addEventListener('submit', (e) => {
             e.preventDefault();
@@ -267,18 +257,6 @@ class PromptForgeApp {
         this.dom.closeModalBtns.forEach(btn => {
             btn.addEventListener('click', (e) => this.closeModal(e.target.closest('.modal')));
         });
-
-        if (this.dom.chatSendBtn) {
-            this.dom.chatSendBtn.addEventListener('click', () => this.sendChatMessage());
-        }
-        if (this.dom.chatInput) {
-            this.dom.chatInput.addEventListener('keypress', (e) => {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    this.sendChatMessage();
-                }
-            });
-        }
 
         // Initialize AI Settings elements
         this.dom.aiSettingsModal = document.getElementById('ai-settings-modal');
@@ -757,65 +735,6 @@ class PromptForgeApp {
         } finally {
             this.dom.enhancePromptBtn.disabled = false;
             this.dom.enhancePromptBtn.innerHTML = '<i class="fas fa-magic"></i> Enhance with AI';
-        }
-    }
-
-    showChatModal() {
-        if (this.dom.chatModal) {
-            this.dom.chatModal.classList.add('active');
-            this.dom.chatInput?.focus();
-        }
-    }
-
-    appendChatMessage(sender, text) {
-        if (!this.dom.chatMessages) return;
-        const div = document.createElement('div');
-        div.className = `chat-message ${sender}`;
-        div.textContent = text;
-        this.dom.chatMessages.appendChild(div);
-        this.dom.chatMessages.scrollTop = this.dom.chatMessages.scrollHeight;
-    }
-
-    async sendChatMessage() {
-        if (!this.dom.chatInput) return;
-        const message = this.dom.chatInput.value.trim();
-        if (!message) return;
-
-        if (!this.aiSettings.apiKey || !this.aiSettings.model) {
-            this.showNotification('Please configure AI settings first', 'error');
-            this.showAiSettingsModal();
-            return;
-        }
-
-        this.appendChatMessage('user', message);
-        this.dom.chatInput.value = '';
-        this.chatHistory.push({ role: 'user', content: message });
-
-        if (this.dom.chatSendBtn) this.dom.chatSendBtn.disabled = true;
-
-        try {
-            const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${this.aiSettings.apiKey}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    model: this.aiSettings.model,
-                    messages: [{ role: 'system', content: 'You are a helpful assistant.' }, ...this.chatHistory]
-                })
-            });
-
-            if (!response.ok) throw new Error('API request failed');
-
-            const result = await response.json();
-            const reply = result.choices[0]?.message?.content?.trim() || 'No response';
-            this.appendChatMessage('bot', reply);
-            this.chatHistory.push({ role: 'assistant', content: reply });
-        } catch (error) {
-            this.appendChatMessage('bot', `Error: ${error.message}`);
-        } finally {
-            if (this.dom.chatSendBtn) this.dom.chatSendBtn.disabled = false;
         }
     }
 
