@@ -14,10 +14,7 @@ const FONT_AWESOME_DOMAINS = [
   'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/webfonts'
 ];
 
-// Cache all Font Awesome fonts
-const fontAwesomeDomains = [
-    'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/webfonts'
-];
+// (Removed duplicate constant)
 
 
 self.addEventListener('install', event => {

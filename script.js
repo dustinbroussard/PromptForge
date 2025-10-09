@@ -35,7 +35,7 @@ class PromptForgeApp {
                 promptsGrid: document.getElementById('prompts-grid'),
                 searchInput: document.getElementById('search-input'),
                 newPromptBtn: document.getElementById('new-prompt-btn'),
-                filterTags: document.querySelectorAll('.filter-tag'),
+                filterTagsContainer: document.querySelector('.filter-tags'),
                 sortSelect: document.getElementById('sort-select'),
                 importBtn: document.getElementById('import-prompts-btn'),
                 importInput: document.getElementById('import-prompts-input'),
@@ -68,7 +68,8 @@ class PromptForgeApp {
         this.loadPrompts();
         this.applyTheme();
         this.bindEvents();
-        this.renderPrompts();
+        this.renderFilterTags();
+        this.handleFilterAndSort();
         this.setupInstallPrompt();
     }
 
@@ -165,11 +166,16 @@ class PromptForgeApp {
     loadPrompts() {
         const storedPrompts = localStorage.getItem('promptForgePrompts');
         if (storedPrompts) {
-            this.prompts = JSON.parse(storedPrompts).map(p => ({
-                ...p,
-                createdAt: new Date(p.createdAt),
-                lastUsed: new Date(p.lastUsed)
-            }));
+            this.prompts = JSON.parse(storedPrompts).map(p => {
+                const tagsRaw = Array.isArray(p.tags) ? p.tags : (typeof p.tags === 'string' ? p.tags.split(',') : []);
+                const tags = tagsRaw.map(t => String(t).trim().toLowerCase()).filter(Boolean);
+                return {
+                    ...p,
+                    tags: tags.length ? tags : ['general'],
+                    createdAt: new Date(p.createdAt),
+                    lastUsed: new Date(p.lastUsed)
+                };
+            });
         } else {
             // Load sample data if local storage is empty
             this.prompts = this.loadSampleData();
@@ -231,11 +237,28 @@ class PromptForgeApp {
      */
     bindEvents() {
         this.dom.newPromptBtn.addEventListener('click', () => this.showNewPromptModal());
-        this.dom.searchInput.addEventListener('input', (e) => {
+        // Debounced search for smoother typing
+        const debounce = (fn, wait = 150) => {
+            let t;
+            return (...args) => {
+                clearTimeout(t);
+                t = setTimeout(() => fn.apply(this, args), wait);
+            };
+        };
+        this.dom.searchInput.addEventListener('input', debounce((e) => {
             this.searchTerm = e.target.value;
             this.handleFilterAndSort();
+        }, 150));
+        
+        // Restore and persist sort selection
+        const savedSort = localStorage.getItem('pf_sort') || 'newest';
+        if (this.dom.sortSelect) {
+            this.dom.sortSelect.value = savedSort;
+        }
+        this.dom.sortSelect.addEventListener('change', () => {
+            localStorage.setItem('pf_sort', this.dom.sortSelect.value);
+            this.handleFilterAndSort();
         });
-        this.dom.sortSelect.addEventListener('change', () => this.handleFilterAndSort());
         this.dom.importBtn.addEventListener('click', () => this.dom.importInput.click());
         this.dom.importInput.addEventListener('change', (e) => this.importPrompts(e));
         this.dom.exportBtn.addEventListener('click', () => this.exportPrompts());
@@ -246,13 +269,17 @@ class PromptForgeApp {
         });
         this.dom.cancelPromptBtn.addEventListener('click', () => this.closeModal(this.dom.newEditModal));
 
-        this.dom.filterTags.forEach(tag => {
-            tag.addEventListener('click', (e) => {
-                this.setActiveFilter(e.target);
-                this.currentFilter = e.target.dataset.filter;
+        // Tag filter click handling via delegation
+        if (this.dom.filterTagsContainer) {
+            this.dom.filterTagsContainer.addEventListener('click', (e) => {
+                const tagEl = e.target.closest('.filter-tag');
+                if (!tagEl) return;
+                this.currentFilter = tagEl.dataset.filter || 'all';
+                localStorage.setItem('pf_filter', this.currentFilter);
+                this.renderFilterTags();
                 this.handleFilterAndSort();
             });
-        });
+        }
 
         this.dom.closeModalBtns.forEach(btn => {
             btn.addEventListener('click', (e) => this.closeModal(e.target.closest('.modal')));
@@ -301,9 +328,45 @@ class PromptForgeApp {
         this.renderPrompts();
     }
     
-    setActiveFilter(activeTag) {
-        this.dom.filterTags.forEach(tag => tag.classList.remove('active'));
-        activeTag.classList.add('active');
+    setActiveFilter(activeFilter) {
+        // Helper retained for potential future use
+        const tags = this.dom.filterTagsContainer?.querySelectorAll('.filter-tag') || [];
+        tags.forEach(tag => tag.classList.toggle('active', tag.dataset.filter === activeFilter));
+    }
+
+    getExistingTags() {
+        const counts = new Map();
+        this.prompts.forEach(p => {
+            (p.tags || []).forEach(t => {
+                const tag = String(t).trim().toLowerCase();
+                if (!tag) return;
+                counts.set(tag, (counts.get(tag) || 0) + 1);
+            });
+        });
+        // Sort alphabetically; could be by frequency if preferred
+        return Array.from(counts.entries())
+            .sort((a, b) => a[0].localeCompare(b[0]))
+            .map(([tag, count]) => ({ tag, count }));
+    }
+
+    renderFilterTags() {
+        if (!this.dom.filterTagsContainer) return;
+        // Restore last filter selection
+        const savedFilter = localStorage.getItem('pf_filter');
+        if (savedFilter && this.currentFilter === 'all') {
+            this.currentFilter = savedFilter;
+        }
+        const tags = this.getExistingTags();
+        // If current filter no longer exists, reset to 'all'
+        if (this.currentFilter !== 'all' && !tags.some(t => t.tag === this.currentFilter)) {
+            this.currentFilter = 'all';
+        }
+        const totalCount = this.prompts.length;
+        const chips = [
+            `<span class="filter-tag ${this.currentFilter === 'all' ? 'active' : ''}" data-filter="all">All (${totalCount})</span>`,
+            ...tags.map(({tag, count}) => `<span class="filter-tag ${this.currentFilter === tag ? 'active' : ''}" data-filter="${this.escapeHtml(tag)}">${this.escapeHtml(tag)} (${count})</span>`)
+        ];
+        this.dom.filterTagsContainer.innerHTML = chips.join('');
     }
 
     /**
@@ -373,6 +436,7 @@ class PromptForgeApp {
         }
 
         this.savePrompts();
+        this.renderFilterTags();
         this.handleFilterAndSort();
         this.closeModal(this.dom.newEditModal);
     }
@@ -381,6 +445,7 @@ class PromptForgeApp {
         if (!confirm('Are you sure you want to delete this prompt?')) return;
         this.prompts = this.prompts.filter(p => p.id !== id);
         this.savePrompts();
+        this.renderFilterTags();
         this.handleFilterAndSort();
         this.closeModal(this.dom.promptDetailModal);
         this.showNotification('Prompt deleted successfully!', 'success');
@@ -415,7 +480,6 @@ class PromptForgeApp {
     }
 
     renderPrompts() {
-        this.filterPrompts();
         if (this.filteredPrompts.length === 0) {
             this.dom.promptsGrid.style.display = 'none';
             this.dom.emptyState.style.display = 'flex';
@@ -521,14 +585,21 @@ class PromptForgeApp {
                     throw new Error('Invalid file format');
                 }
 
-                this.prompts = imported.map(p => ({
-                    ...p,
-                    preview: p.preview || this.createPreview(p.content || ''),
-                    createdAt: p.createdAt ? new Date(p.createdAt) : new Date(),
-                    lastUsed: p.lastUsed ? new Date(p.lastUsed) : new Date()
-                }));
+                this.prompts = imported.map(p => {
+                    const tagsRaw = Array.isArray(p.tags) ? p.tags : (typeof p.tags === 'string' ? p.tags.split(',') : []);
+                    const tags = tagsRaw.map(t => String(t).trim().toLowerCase()).filter(Boolean);
+                    return {
+                        ...p,
+                        tags: tags.length ? tags : ['general'],
+                        preview: p.preview || this.createPreview(p.content || ''),
+                        createdAt: p.createdAt ? new Date(p.createdAt) : new Date(),
+                        lastUsed: p.lastUsed ? new Date(p.lastUsed) : new Date(),
+                        useCount: typeof p.useCount === 'number' ? p.useCount : 0
+                    };
+                });
 
                 this.savePrompts();
+                this.renderFilterTags();
                 this.handleFilterAndSort();
                 this.showNotification('Prompts imported successfully!', 'success');
             } catch (error) {
