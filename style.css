@@ -198,11 +198,12 @@ body {
     position: relative;
     flex: 1;
     min-width: 250px;
+    margin-bottom: 16px;
 }
 
 .search-input {
     width: 100%;
-    padding: 14px 20px 14px 48px;
+    padding: 14px 44px 14px 48px;
     background: var(--bg-tertiary);
     border: 1px solid var(--border);
     border-radius: 12px;
@@ -229,6 +230,32 @@ body {
     transform: translateY(-50%);
     color: var(--text-muted);
     font-size: 1rem;
+}
+
+.search-clear-btn {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 50%;
+    display: none;
+}
+
+.search-clear-btn:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+}
+
+.search-clear-btn.visible {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .filter-tags {
@@ -671,6 +698,204 @@ body {
         padding: 16px;
     }
 
+    .prompts-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Feature: Tag + Sort controls row */
+.controlsRow {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    align-items: end;
+    max-width: 100%;
+}
+
+.controlGroup {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+
+.controlGroup .sort-label {
+    margin-bottom: 0;
+    white-space: nowrap;
+}
+
+.controlGroup .sort-select {
+    width: 100%;
+    flex: 1;
+    min-width: 0;
+}
+
+@media (max-width: 360px) {
+    .controlsRow {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Feature: Import / Export modal layout + tabs */
+.import-export-content {
+    width: min(92vw, 520px);
+    max-width: 520px;
+    max-height: 85vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.import-export-tabs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    margin-bottom: 16px;
+}
+
+.tab-btn {
+    border: none;
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    padding: 10px 12px;
+    cursor: pointer;
+    font-size: 0.95rem;
+    font-weight: 600;
+    transition: all 0.2s ease;
+}
+
+.tab-btn.active {
+    background: var(--accent-secondary);
+    color: var(--bg-primary);
+}
+
+.tab-btn:focus-visible {
+    outline: 2px solid var(--accent-primary);
+    outline-offset: 2px;
+}
+
+.import-export-section {
+    display: none;
+}
+
+.import-export-section.active {
+    display: block;
+}
+
+.section-title {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.export-actions {
+    display: flex;
+    gap: 12px;
+    flex-direction: column;
+}
+
+.import-actions {
+    margin-top: 12px;
+}
+
+.import-actions .action-btn,
+.export-actions .action-btn {
+    width: 100%;
+}
+
+.form-group .option-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: var(--text-primary);
+    font-size: 0.95rem;
+    line-height: 1.4;
+    margin-top: 10px;
+    cursor: pointer;
+    width: fit-content;
+    max-width: 100%;
+    white-space: nowrap;
+}
+
+.option-row--reverse {
+    flex-direction: row-reverse;
+    justify-content: flex-end;
+}
+
+.file-input-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+}
+
+.file-name {
+    flex: 1;
+    min-width: 0;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    padding: 10px 12px;
+    border-radius: 10px;
+}
+
+.helper-text {
+    margin-top: 8px;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    line-height: 1.4;
+}
+
+.import-summary {
+    margin-top: 16px;
+    padding: 12px 14px;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text-primary);
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+}
+
+.import-summary.is-hidden {
+    display: none;
+}
+
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    border: 0;
+}
+
+/* Feature: Overflow guardrails */
+.main-container {
+    width: 100%;
+}
+
+.prompts-grid {
+    overflow-x: hidden;
+}
+
+.prompt-card {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
+}
+
+@media (max-width: 480px) {
     .prompts-grid {
         grid-template-columns: 1fr;
     }

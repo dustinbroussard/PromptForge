@@ -84,11 +84,8 @@
                 <h1>PromptForge</h1>
             </div>
             <div class="header-actions">
-                <button class="header-btn" id="import-prompts-btn" title="Import Prompts">
+                <button class="header-btn header-btn-text" id="import-export-btn" title="Import / Export">
                     <i class="fas fa-file-import"></i>
-                </button>
-                <button class="header-btn" id="export-prompts-btn" title="Export Prompts">
-                    <i class="fas fa-file-export"></i>
                 </button>
                 <button class="header-btn" id="theme-toggle-btn" title="Toggle Theme">
                     <i class="fas fa-sun"></i>
@@ -96,10 +93,67 @@
                 <button class="header-btn" id="settings-btn" title="Settings">
                     <i class="fas fa-cog"></i>
                 </button>
-                <input type="file" id="import-prompts-input" accept="application/json" style="display:none">
             </div>
         </div>
     </header>
+
+    <!-- Import / Export Modal -->
+    <div id="import-export-modal" class="modal import-export-modal">
+        <div class="modal-overlay"></div>
+        <div class="modal-content import-export-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Import / Export</h2>
+                <button class="close-modal"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="import-export-tabs" role="tablist" aria-label="Import and export tabs">
+                    <button class="tab-btn active" data-tab="export" role="tab" aria-selected="true">Export</button>
+                    <button class="tab-btn" data-tab="import" role="tab" aria-selected="false">Import</button>
+                </div>
+
+                <div class="import-export-section active" data-section="export">
+                    <div class="form-group">
+                        <label class="section-title">Export Options</label>
+                        <div class="export-actions">
+                            <button id="export-all-btn" class="action-btn primary">Export All Prompts</button>
+                        </div>
+                        <label class="option-row">
+                            <input type="checkbox" id="export-include-settings">
+                            <span>Include settings</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="import-export-section" data-section="import">
+                    <div class="form-group">
+                        <label class="section-title">Import Options</label>
+                        <div class="file-input-row">
+                            <button id="import-file-btn" class="action-btn secondary" type="button">Choose file</button>
+                            <span id="import-file-name" class="file-name">No file selected</span>
+                            <input type="file" id="import-file-input" class="visually-hidden" accept=".json,application/json">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="section-title" for="import-behavior-select">Import behavior</label>
+                        <select id="import-behavior-select" class="sort-select">
+                            <option value="merge" selected>Merge (add new, keep existing)</option>
+                            <option value="overwrite">Overwrite duplicates (replace existing)</option>
+                            <option value="replaceAll">Replace all (delete all then import)</option>
+                        </select>
+                        <p id="import-behavior-help" class="helper-text">Keeps your current prompts and adds only new ones.</p>
+                    </div>
+                    <label class="option-row">
+                        <input type="checkbox" id="import-include-settings" checked>
+                        <span>Import settings if present</span>
+                    </label>
+                    <div class="import-actions">
+                        <button id="import-confirm-btn" class="action-btn primary">Import</button>
+                    </div>
+                    <div id="import-summary" class="import-summary is-hidden" aria-live="polite"></div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- AI Settings Modal -->
     <div id="ai-settings-modal" class="modal">
@@ -151,17 +205,27 @@
             <div class="search-container">
                 <input type="text" id="search-input" class="search-input" placeholder="Search prompts...">
                 <i class="fas fa-search search-icon"></i>
+                <button type="button" id="search-clear-btn" class="search-clear-btn" aria-label="Clear search" title="Clear search">
+                    <i class="fas fa-times"></i>
+                </button>
             </div>
             <div class="filters-container">
-                <div class="filter-tags"></div>
-                <div class="sort-container">
-                    <label for="sort-select" class="sort-label">Sort by:</label>
-                    <select id="sort-select" class="sort-select">
-                        <option value="newest">Newest First</option>
-                        <option value="oldest">Oldest First</option>
-                        <option value="alphabetical">Alphabetical</option>
-                        <option value="most-used">Most Used</option>
-                    </select>
+                <div class="controlsRow">
+                    <div class="controlGroup">
+                        <label for="tag-select" class="sort-label">Tag:</label>
+                        <select id="tag-select" class="sort-select">
+                            <option value="all">All tags</option>
+                        </select>
+                    </div>
+                    <div class="controlGroup">
+                        <label for="sort-select" class="sort-label">Sort by:</label>
+                        <select id="sort-select" class="sort-select">
+                            <option value="newest">Newest First</option>
+                            <option value="oldest">Oldest First</option>
+                            <option value="alphabetical">Alphabetical</option>
+                            <option value="most-used">Most Used</option>
+                        </select>
+                    </div>
                 </div>
             </div>
         </section>
@@ -222,6 +286,9 @@
                         <button type="button" id="enhance-prompt-btn" class="action-btn" style="margin-right: auto;">
                             <i class="fas fa-magic"></i> Enhance with AI
                         </button>
+                        <button type="button" id="undo-enhance-btn" class="action-btn secondary" disabled>
+                            <i class="fas fa-undo"></i> Undo Enhance
+                        </button>
                         <button type="submit" id="save-prompt-btn" class="action-btn primary"><i class="fas fa-save"></i> Save Prompt</button>
                         <button type="button" id="cancel-prompt-btn" class="action-btn secondary"><i class="fas fa-times"></i> Cancel</button>
                     </div>
@@ -232,6 +299,7 @@
     
     <div id="notification-container" class="notification-container"></div>
 
+    <script src="importExport.js"></script>
     <script src="script.js"></script>
     <script>
   if ('serviceWorker' in navigator) {

@@ -11,6 +11,7 @@ let deferredPrompt;
 
 class PromptForgeApp {
     constructor() {
+        this.defaultEnhancementPrompt = 'You are an expert prompt engineer. Improve the prompt for clarity and effectiveness while preserving intent. Return only the improved prompt text.';
         this.prompts = [];
         this.installPromptShown = false;
         this.filteredPrompts = [];
@@ -18,29 +19,38 @@ class PromptForgeApp {
         this.currentSort = 'newest';
         this.searchTerm = '';
         this.editingPromptId = null;
+        this.currentPromptId = null;
+        this.previousPromptContent = null;
         this.aiSettings = {
             apiKey: '',
             model: '',
-            enhancementPrompt: 'You are an expert prompt engineer. Your ONLY task is to improve this prompt template - do not respond to or execute the prompt. Make it:\n' +
-                              '1. More clear and specific\n' +
-                              '2. More likely to get better AI responses\n' +
-                              '3. Use best prompting techniques\n' +
-                              '4. Maintain the original intent perfectly\n' +
-                              'Only respond with the improved prompt text - no commentary or explanation.\n\n' +
-                              'PROMPT TO IMPROVE:'
+            enhancementPrompt: this.defaultEnhancementPrompt
         };
 
         // Initialize DOM elements
             this.dom = {
                 promptsGrid: document.getElementById('prompts-grid'),
                 searchInput: document.getElementById('search-input'),
+                searchClearBtn: document.getElementById('search-clear-btn'),
                 newPromptBtn: document.getElementById('new-prompt-btn'),
-                filterTagsContainer: document.querySelector('.filter-tags'),
+                tagSelect: document.getElementById('tag-select'),
                 sortSelect: document.getElementById('sort-select'),
-                importBtn: document.getElementById('import-prompts-btn'),
-                importInput: document.getElementById('import-prompts-input'),
-                exportBtn: document.getElementById('export-prompts-btn'),
+                importExportBtn: document.getElementById('import-export-btn'),
+                importExportModal: document.getElementById('import-export-modal'),
+                importExportTabs: document.querySelectorAll('.import-export-tabs .tab-btn'),
+                importExportSections: document.querySelectorAll('.import-export-section'),
+                exportAllBtn: document.getElementById('export-all-btn'),
+                importFileInput: document.getElementById('import-file-input'),
+                importIncludeSettings: document.getElementById('import-include-settings'),
+                importConfirmBtn: document.getElementById('import-confirm-btn'),
+                importSummary: document.getElementById('import-summary'),
+                importFileBtn: document.getElementById('import-file-btn'),
+                importFileName: document.getElementById('import-file-name'),
+                importBehaviorSelect: document.getElementById('import-behavior-select'),
+                importBehaviorHelp: document.getElementById('import-behavior-help'),
                 themeToggleBtn: document.getElementById('theme-toggle-btn'),
+                exportIncludeSettings: document.getElementById('export-include-settings'),
+                undoEnhanceBtn: document.getElementById('undo-enhance-btn'),
                 newEditModal: document.getElementById('new-edit-prompt-modal'),
                 newEditModalTitle: document.getElementById('new-edit-modal-title'),
                 promptForm: document.getElementById('prompt-form'),
@@ -68,7 +78,7 @@ class PromptForgeApp {
         this.loadPrompts();
         this.applyTheme();
         this.bindEvents();
-        this.renderFilterTags();
+        this.renderTagDropdown();
         this.handleFilterAndSort();
         this.setupInstallPrompt();
     }
@@ -166,16 +176,9 @@ class PromptForgeApp {
     loadPrompts() {
         const storedPrompts = localStorage.getItem('promptForgePrompts');
         if (storedPrompts) {
-            this.prompts = JSON.parse(storedPrompts).map(p => {
-                const tagsRaw = Array.isArray(p.tags) ? p.tags : (typeof p.tags === 'string' ? p.tags.split(',') : []);
-                const tags = tagsRaw.map(t => String(t).trim().toLowerCase()).filter(Boolean);
-                return {
-                    ...p,
-                    tags: tags.length ? tags : ['general'],
-                    createdAt: new Date(p.createdAt),
-                    lastUsed: new Date(p.lastUsed)
-                };
-            });
+            const parsed = JSON.parse(storedPrompts);
+            const normalized = PromptForgeImportExport.normalizeImportedData(parsed).prompts;
+            this.prompts = normalized;
         } else {
             // Load sample data if local storage is empty
             this.prompts = this.loadSampleData();
@@ -190,43 +193,43 @@ class PromptForgeApp {
     loadSampleData() {
         return [
             {
-                id: 1,
+                id: "1",
                 title: "Creative Writing Assistant",
                 preview: "Help me write engaging stories with vivid descriptions and compelling characters. Focus on show don't tell techniques...",
                 content: "You are a creative writing assistant. Help me write engaging stories with vivid descriptions and compelling characters. Focus on 'show don't tell' techniques, create immersive settings, and develop authentic dialogue. Always ask clarifying questions about genre, tone, and target audience before starting.",
                 tags: ["writing", "creative"],
-                createdAt: new Date('2024-01-01T10:00:00Z'),
-                lastUsed: new Date('2024-01-01T10:00:00Z'),
+                createdAt: "2024-01-01T10:00:00.000Z",
+                lastUsed: "2024-01-01T10:00:00.000Z",
                 useCount: 23
             },
             {
-                id: 2,
+                id: "2",
                 title: "Code Review Expert",
                 preview: "Analyze code for best practices, security vulnerabilities, and performance optimizations. Provide detailed feedback...",
                 content: "You are an expert code reviewer with deep knowledge of multiple programming languages. Analyze code for best practices, security vulnerabilities, performance optimizations, and maintainability. Provide specific, actionable feedback with examples of improvements.",
                 tags: ["coding", "analysis"],
-                createdAt: new Date('2024-01-02T11:30:00Z'),
-                lastUsed: new Date('2024-01-02T11:30:00Z'),
+                createdAt: "2024-01-02T11:30:00.000Z",
+                lastUsed: "2024-01-02T11:30:00.000Z",
                 useCount: 45
             },
             {
-                id: 3,
+                id: "3",
                 title: "Business Strategy Consultant",
                 preview: "Provide strategic business advice with market analysis, competitive positioning, and growth recommendations...",
                 content: "Act as a senior business strategy consultant. Provide strategic business advice with market analysis, competitive positioning, and growth recommendations. Use frameworks like SWOT, Porter's Five Forces, and Blue Ocean Strategy when relevant.",
                 tags: ["business", "analysis"],
-                createdAt: new Date('2024-01-03T14:00:00Z'),
-                lastUsed: new Date('2024-01-03T14:00:00Z'),
+                createdAt: "2024-01-03T14:00:00.000Z",
+                lastUsed: "2024-01-03T14:00:00.000Z",
                 useCount: 12
             },
             {
-                id: 4,
+                id: "4",
                 title: "Python Debugging Helper",
                 preview: "Debug Python code by identifying errors, suggesting fixes, and explaining best practices for clean code...",
                 content: "You are a Python debugging expert. Help identify errors in Python code, suggest fixes, and explain best practices for writing clean, efficient Python code. Include explanations of common pitfalls and how to avoid them.",
                 tags: ["coding", "python"],
-                createdAt: new Date('2024-01-04T16:45:00Z'),
-                lastUsed: new Date('2024-01-04T16:45:00Z'),
+                createdAt: "2024-01-04T16:45:00.000Z",
+                lastUsed: "2024-01-04T16:45:00.000Z",
                 useCount: 31
             }
         ];
@@ -247,8 +250,18 @@ class PromptForgeApp {
         };
         this.dom.searchInput.addEventListener('input', debounce((e) => {
             this.searchTerm = e.target.value;
+            this.toggleSearchClear();
             this.handleFilterAndSort();
         }, 150));
+        if (this.dom.searchClearBtn) {
+            this.dom.searchClearBtn.addEventListener('click', () => {
+                this.dom.searchInput.value = '';
+                this.searchTerm = '';
+                this.toggleSearchClear();
+                this.handleFilterAndSort();
+                this.dom.searchInput.focus();
+            });
+        }
         
         // Restore and persist sort selection
         const savedSort = localStorage.getItem('pf_sort') || 'newest';
@@ -259,24 +272,51 @@ class PromptForgeApp {
             localStorage.setItem('pf_sort', this.dom.sortSelect.value);
             this.handleFilterAndSort();
         });
-        this.dom.importBtn.addEventListener('click', () => this.dom.importInput.click());
-        this.dom.importInput.addEventListener('change', (e) => this.importPrompts(e));
-        this.dom.exportBtn.addEventListener('click', () => this.exportPrompts());
+        if (this.dom.importExportBtn) {
+            this.dom.importExportBtn.addEventListener('click', () => this.showImportExportModal('export'));
+        }
+        if (this.dom.importExportTabs) {
+            this.dom.importExportTabs.forEach(tab => {
+                tab.addEventListener('click', () => this.setActiveImportExportTab(tab.dataset.tab));
+            });
+        }
+        if (this.dom.exportAllBtn) {
+            this.dom.exportAllBtn.addEventListener('click', () => this.handleExportAll());
+        }
+        if (this.dom.importConfirmBtn) {
+            this.dom.importConfirmBtn.addEventListener('click', () => this.handleImportConfirm());
+        }
+        if (this.dom.importBehaviorSelect) {
+            this.dom.importBehaviorSelect.addEventListener('change', () => this.updateImportBehaviorHelp());
+            this.updateImportBehaviorHelp();
+        }
+        if (this.dom.importFileBtn && this.dom.importFileInput) {
+            this.dom.importFileBtn.addEventListener('click', () => this.dom.importFileInput.click());
+            this.dom.importFileInput.addEventListener('change', () => this.updateImportFileName());
+            this.updateImportFileName();
+        }
+        if (this.dom.importExportModal) {
+            const overlay = this.dom.importExportModal.querySelector('.modal-overlay');
+            if (overlay) {
+                overlay.addEventListener('click', () => this.closeModal(this.dom.importExportModal));
+            }
+            const modalContent = this.dom.importExportModal.querySelector('.modal-content');
+            if (modalContent) {
+                modalContent.addEventListener('dragover', (e) => this.handleImportDragOver(e));
+                modalContent.addEventListener('dragleave', (e) => this.handleImportDragLeave(e));
+                modalContent.addEventListener('drop', (e) => this.handleImportDrop(e));
+            }
+        }
         this.dom.themeToggleBtn.addEventListener('click', () => this.toggleTheme());
         this.dom.promptForm.addEventListener('submit', (e) => {
             e.preventDefault();
             this.savePromptFromForm();
         });
         this.dom.cancelPromptBtn.addEventListener('click', () => this.closeModal(this.dom.newEditModal));
-
-        // Tag filter click handling via delegation
-        if (this.dom.filterTagsContainer) {
-            this.dom.filterTagsContainer.addEventListener('click', (e) => {
-                const tagEl = e.target.closest('.filter-tag');
-                if (!tagEl) return;
-                this.currentFilter = tagEl.dataset.filter || 'all';
-                localStorage.setItem('pf_filter', this.currentFilter);
-                this.renderFilterTags();
+        if (this.dom.tagSelect) {
+            this.dom.tagSelect.addEventListener('change', () => {
+                this.currentFilter = this.dom.tagSelect.value || 'all';
+                localStorage.setItem('pf_selectedTag', this.currentFilter);
                 this.handleFilterAndSort();
             });
         }
@@ -284,6 +324,22 @@ class PromptForgeApp {
         this.dom.closeModalBtns.forEach(btn => {
             btn.addEventListener('click', (e) => this.closeModal(e.target.closest('.modal')));
         });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                if (this.dom.importExportModal && this.dom.importExportModal.classList.contains('active')) {
+                    this.closeModal(this.dom.importExportModal);
+                }
+                return;
+            }
+            if (e.key === 'O' && e.shiftKey) {
+                this.findHorizontalOverflow();
+            }
+        });
+
+        const overflowCheck = () => this.findHorizontalOverflow();
+        window.addEventListener('load', overflowCheck);
+        window.addEventListener('resize', debounce(overflowCheck, 200));
 
         // Initialize AI Settings elements
         this.dom.aiSettingsModal = document.getElementById('ai-settings-modal');
@@ -311,6 +367,9 @@ class PromptForgeApp {
         if (this.dom.enhancePromptBtn) {
             this.dom.enhancePromptBtn.addEventListener('click', () => this.enhancePrompt());
         }
+        if (this.dom.undoEnhanceBtn) {
+            this.dom.undoEnhanceBtn.addEventListener('click', () => this.undoEnhancement());
+        }
         // Add API key change listener to fetch models
         if (this.dom.openrouterApiKey) {
             this.dom.openrouterApiKey.addEventListener('blur', () => {
@@ -327,11 +386,18 @@ class PromptForgeApp {
         this.sortPrompts();
         this.renderPrompts();
     }
+
+    toggleSearchClear() {
+        if (!this.dom.searchClearBtn || !this.dom.searchInput) return;
+        const isVisible = Boolean(this.dom.searchInput.value);
+        this.dom.searchClearBtn.classList.toggle('visible', isVisible);
+    }
     
     setActiveFilter(activeFilter) {
         // Helper retained for potential future use
-        const tags = this.dom.filterTagsContainer?.querySelectorAll('.filter-tag') || [];
-        tags.forEach(tag => tag.classList.toggle('active', tag.dataset.filter === activeFilter));
+        if (this.dom.tagSelect) {
+            this.dom.tagSelect.value = activeFilter || 'all';
+        }
     }
 
     getExistingTags() {
@@ -349,24 +415,23 @@ class PromptForgeApp {
             .map(([tag, count]) => ({ tag, count }));
     }
 
-    renderFilterTags() {
-        if (!this.dom.filterTagsContainer) return;
-        // Restore last filter selection
-        const savedFilter = localStorage.getItem('pf_filter');
+    renderTagDropdown() {
+        if (!this.dom.tagSelect) return;
+        const savedFilter = localStorage.getItem('pf_selectedTag') || localStorage.getItem('pf_filter');
         if (savedFilter && this.currentFilter === 'all') {
             this.currentFilter = savedFilter;
         }
         const tags = this.getExistingTags();
-        // If current filter no longer exists, reset to 'all'
         if (this.currentFilter !== 'all' && !tags.some(t => t.tag === this.currentFilter)) {
             this.currentFilter = 'all';
+            localStorage.setItem('pf_selectedTag', 'all');
         }
-        const totalCount = this.prompts.length;
-        const chips = [
-            `<span class="filter-tag ${this.currentFilter === 'all' ? 'active' : ''}" data-filter="all">All (${totalCount})</span>`,
-            ...tags.map(({tag, count}) => `<span class="filter-tag ${this.currentFilter === tag ? 'active' : ''}" data-filter="${this.escapeHtml(tag)}">${this.escapeHtml(tag)} (${count})</span>`)
+        const options = [
+            `<option value="all">All tags</option>`,
+            ...tags.map(({ tag, count }) => `<option value="${this.escapeHtml(tag)}">${this.escapeHtml(tag)} (${count})</option>`)
         ];
-        this.dom.filterTagsContainer.innerHTML = chips.join('');
+        this.dom.tagSelect.innerHTML = options.join('');
+        this.dom.tagSelect.value = this.currentFilter;
     }
 
     /**
@@ -374,6 +439,10 @@ class PromptForgeApp {
      */
     showNewPromptModal() {
         this.editingPromptId = null;
+        this.previousPromptContent = null;
+        if (this.dom.undoEnhanceBtn) {
+            this.dom.undoEnhanceBtn.disabled = true;
+        }
         this.dom.newEditModalTitle.textContent = 'New Prompt';
         this.dom.promptForm.reset();
         this.dom.newEditModal.classList.add('active');
@@ -386,6 +455,11 @@ class PromptForgeApp {
             return;
         }
 
+        this.currentPromptId = promptToEdit.id;
+        this.previousPromptContent = null;
+        if (this.dom.undoEnhanceBtn) {
+            this.dom.undoEnhanceBtn.disabled = true;
+        }
         this.editingPromptId = id;
         this.dom.newEditModalTitle.textContent = `Edit Prompt: ${promptToEdit.title}`;
         this.dom.promptTitleInput.value = promptToEdit.title;
@@ -422,13 +496,13 @@ class PromptForgeApp {
         } else {
             // Create new prompt
             const newPrompt = {
-                id: Date.now(),
+                id: crypto.randomUUID(),
                 title,
                 preview: this.createPreview(content),
                 content,
                 tags,
-                createdAt: new Date(),
-                lastUsed: new Date(),
+                createdAt: new Date().toISOString(),
+                lastUsed: null,
                 useCount: 0
             };
             this.prompts.unshift(newPrompt);
@@ -436,7 +510,7 @@ class PromptForgeApp {
         }
 
         this.savePrompts();
-        this.renderFilterTags();
+        this.renderTagDropdown();
         this.handleFilterAndSort();
         this.closeModal(this.dom.newEditModal);
     }
@@ -444,8 +518,11 @@ class PromptForgeApp {
     deletePrompt(id) {
         if (!confirm('Are you sure you want to delete this prompt?')) return;
         this.prompts = this.prompts.filter(p => p.id !== id);
+        if (this.currentPromptId === id) {
+            this.currentPromptId = null;
+        }
         this.savePrompts();
-        this.renderFilterTags();
+        this.renderTagDropdown();
         this.handleFilterAndSort();
         this.closeModal(this.dom.promptDetailModal);
         this.showNotification('Prompt deleted successfully!', 'success');
@@ -465,10 +542,10 @@ class PromptForgeApp {
     sortPrompts() {
         switch (this.dom.sortSelect.value) {
             case 'newest':
-                this.filteredPrompts.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+                this.filteredPrompts.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
                 break;
             case 'oldest':
-                this.filteredPrompts.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
+                this.filteredPrompts.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
                 break;
             case 'alphabetical':
                 this.filteredPrompts.sort((a, b) => a.title.localeCompare(b.title));
@@ -509,6 +586,7 @@ class PromptForgeApp {
                 <div class="prompt-preview">${this.escapeHtml(this.createPreview(prompt.content))}</div>
                 <div class="prompt-actions">
                     <button class="action-btn primary use-prompt-btn"><i class="fas fa-copy"></i> Use</button>
+                    <button class="action-btn secondary export-prompt-btn"><i class="fas fa-file-export"></i> Export</button>
                     <button class="action-btn secondary edit-prompt-btn"><i class="fas fa-edit"></i> Edit</button>
                 </div>
             </div>
@@ -517,8 +595,9 @@ class PromptForgeApp {
 
     bindPromptCardEvents() {
         document.querySelectorAll('.prompt-card').forEach(card => {
-            const id = parseInt(card.dataset.id);
+            const id = card.dataset.id;
             const useBtn = card.querySelector('.use-prompt-btn');
+            const exportBtn = card.querySelector('.export-prompt-btn');
             const editBtn = card.querySelector('.edit-prompt-btn');
 
             card.addEventListener('click', (e) => {
@@ -526,6 +605,7 @@ class PromptForgeApp {
                 this.showPromptDetailModal(id);
             });
             useBtn.addEventListener('click', () => this.usePrompt(id));
+            exportBtn.addEventListener('click', () => this.exportSinglePromptById(id));
             editBtn.addEventListener('click', () => this.showEditPromptModal(id));
         });
     }
@@ -533,6 +613,7 @@ class PromptForgeApp {
     showPromptDetailModal(id) {
         const prompt = this.prompts.find(p => p.id === id);
         if (!prompt) return;
+        this.currentPromptId = prompt.id;
 
         this.dom.detailTitle.textContent = this.escapeHtml(prompt.title);
         this.dom.detailContent.textContent = prompt.content;
@@ -552,7 +633,7 @@ class PromptForgeApp {
                 this.showNotification(`'${prompt.title}' copied to clipboard!`, 'success');
                 // Update use count and last used date
                 prompt.useCount++;
-                prompt.lastUsed = new Date();
+                prompt.lastUsed = new Date().toISOString();
                 this.savePrompts();
                 this.renderPrompts();
             }).catch(err => {
@@ -562,59 +643,250 @@ class PromptForgeApp {
         this.closeModal(this.dom.promptDetailModal);
     }
 
-    exportPrompts() {
-        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(this.prompts, null, 2));
-        const downloadAnchorNode = document.createElement('a');
-        downloadAnchorNode.setAttribute("href", dataStr);
-        downloadAnchorNode.setAttribute("download", "promptforge_prompts.json");
-        document.body.appendChild(downloadAnchorNode);
-        downloadAnchorNode.click();
-        downloadAnchorNode.remove();
+    showImportExportModal(defaultTab) {
+        if (!this.dom.importExportModal) return;
+        this.setActiveImportExportTab(defaultTab || 'export');
+        if (this.dom.importSummary) {
+            this.dom.importSummary.textContent = '';
+            this.dom.importSummary.classList.add('is-hidden');
+        }
+        document.body.classList.add('modal-open');
+        this.dom.importExportModal.classList.add('active');
+    }
+
+    setActiveImportExportTab(tab) {
+        if (!this.dom.importExportTabs || !this.dom.importExportSections) return;
+        this.dom.importExportTabs.forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.tab === tab);
+            btn.setAttribute('aria-selected', btn.dataset.tab === tab ? 'true' : 'false');
+        });
+        this.dom.importExportSections.forEach(section => {
+            section.classList.toggle('active', section.dataset.section === tab);
+        });
+    }
+
+    handleExportAll() {
+        const includeSettings = this.dom.exportIncludeSettings?.checked === true;
+        this.exportPrompts({ includeSettings });
+    }
+
+    exportPrompts(options = {}) {
+        const settingsBundle = options.includeSettings === true ? { aiSettings: this.aiSettings } : undefined;
+        const exportData = PromptForgeImportExport.createExportBundle(this.prompts, settingsBundle);
+        this.downloadExportData(exportData, 'promptforge_prompts.json');
         this.showNotification('Prompts exported successfully!', 'success');
     }
 
-    importPrompts(e) {
-        const file = e.target.files[0];
-        if (!file) return;
+    exportSinglePromptById(id) {
+        const prompt = this.prompts.find(p => p.id === id);
+        if (!prompt) return;
+        const exportData = PromptForgeImportExport.createExportBundle([prompt]);
+        const filename = this.buildPromptFilename(prompt.title);
+        this.downloadExportData(exportData, filename);
+        this.showNotification('Prompt exported successfully!', 'success');
+    }
 
+    buildPromptFilename(title) {
+        const base = String(title || 'prompt')
+            .trim()
+            .replace(/[\\/:*?"<>|]+/g, '')
+            .replace(/\s+/g, ' ')
+            .slice(0, 80)
+            .trim();
+        return `${base || 'prompt'}.json`;
+    }
+
+    downloadExportData(exportData, filename) {
+        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportData, null, 2));
+        const downloadAnchorNode = document.createElement('a');
+        downloadAnchorNode.setAttribute("href", dataStr);
+        downloadAnchorNode.setAttribute("download", filename);
+        document.body.appendChild(downloadAnchorNode);
+        downloadAnchorNode.click();
+        downloadAnchorNode.remove();
+    }
+
+    handleImportConfirm() {
+        const file = this.dom.importFileInput?.files?.[0];
+        if (!file) {
+            this.showNotification('Choose a JSON file to import.', 'error');
+            return;
+        }
+        const mode = this.getSelectedImportMode();
+        const includeSettings = this.dom.importIncludeSettings?.checked !== false;
+        this.importPromptsFromFile(file, mode, includeSettings);
+        this.dom.importFileInput.value = '';
+        this.updateImportFileName();
+    }
+
+    getSelectedImportMode() {
+        const selected = this.dom.importBehaviorSelect?.value || 'merge';
+        if (selected === 'replaceAll') return 'replace';
+        return selected;
+    }
+
+    importPromptsFromFile(file, mode, includeSettings) {
         const reader = new FileReader();
         reader.onload = (event) => {
             try {
                 const imported = JSON.parse(event.target.result);
-                if (!Array.isArray(imported)) {
-                    throw new Error('Invalid file format');
+                const normalized = PromptForgeImportExport.normalizeImportedData(imported);
+                const summary = this.computeImportSummary(this.prompts, normalized.prompts, mode);
+                this.prompts = PromptForgeImportExport.applyImport(this.prompts, normalized.prompts, mode);
+                if (this.currentPromptId && !this.prompts.some(p => p.id === this.currentPromptId)) {
+                    this.currentPromptId = null;
                 }
 
-                this.prompts = imported.map(p => {
-                    const tagsRaw = Array.isArray(p.tags) ? p.tags : (typeof p.tags === 'string' ? p.tags.split(',') : []);
-                    const tags = tagsRaw.map(t => String(t).trim().toLowerCase()).filter(Boolean);
-                    return {
-                        ...p,
-                        tags: tags.length ? tags : ['general'],
-                        preview: p.preview || this.createPreview(p.content || ''),
-                        createdAt: p.createdAt ? new Date(p.createdAt) : new Date(),
-                        lastUsed: p.lastUsed ? new Date(p.lastUsed) : new Date(),
-                        useCount: typeof p.useCount === 'number' ? p.useCount : 0
-                    };
-                });
+                if (includeSettings && normalized.settings && normalized.settings.aiSettings) {
+                    this.aiSettings = normalized.settings.aiSettings;
+                    localStorage.setItem('promptForgeAiSettings', JSON.stringify(this.aiSettings));
+                }
 
                 this.savePrompts();
-                this.renderFilterTags();
+                this.renderTagDropdown();
                 this.handleFilterAndSort();
+                this.updateImportSummary(summary);
                 this.showNotification('Prompts imported successfully!', 'success');
             } catch (error) {
                 console.error('Import failed:', error);
+                this.updateImportSummary({ error: error.message });
                 this.showNotification(`Failed to import prompts: ${error.message}`, 'error');
             }
         };
 
         reader.readAsText(file);
-        e.target.value = '';
+    }
+
+    computeImportSummary(existingPrompts, incomingPrompts, mode) {
+        const total = incomingPrompts.length;
+        if (mode === 'replace') {
+            return { added: total, updated: 0, skipped: 0, total };
+        }
+
+        const existingIds = new Set(existingPrompts.map(p => p.id));
+        let added = 0;
+        let updated = 0;
+        let skipped = 0;
+
+        incomingPrompts.forEach(prompt => {
+            if (existingIds.has(prompt.id)) {
+                if (mode === 'overwrite') {
+                    updated += 1;
+                } else {
+                    skipped += 1;
+                }
+            } else {
+                added += 1;
+            }
+        });
+
+        return { added, updated, skipped, total };
+    }
+
+    updateImportSummary(summary) {
+        if (!this.dom.importSummary) return;
+        if (summary.error) {
+            this.dom.importSummary.textContent = `Import failed: ${summary.error}`;
+            this.dom.importSummary.classList.remove('is-hidden');
+            return;
+        }
+        this.dom.importSummary.textContent = `Added: ${summary.added} • Updated: ${summary.updated} • Skipped: ${summary.skipped} • Total: ${summary.total}`;
+        this.dom.importSummary.classList.remove('is-hidden');
+    }
+
+    updateImportFileName() {
+        if (!this.dom.importFileName || !this.dom.importFileInput) return;
+        const file = this.dom.importFileInput.files?.[0];
+        this.dom.importFileName.textContent = file ? file.name : 'No file selected';
+    }
+
+    updateImportBehaviorHelp() {
+        if (!this.dom.importBehaviorHelp || !this.dom.importBehaviorSelect) return;
+        const mode = this.dom.importBehaviorSelect.value;
+        const messages = {
+            merge: 'Keeps your current prompts and adds only new ones.',
+            overwrite: 'Replaces prompts with matching IDs.',
+            replaceAll: 'Deletes everything first. Use with caution.'
+        };
+        this.dom.importBehaviorHelp.textContent = messages[mode] || '';
+    }
+
+    findHorizontalOverflow() {
+        const elements = document.querySelectorAll('body *');
+        const offenders = [];
+
+        elements.forEach((el) => {
+            if (el.style && el.style.outline === '2px solid red') {
+                el.style.outline = '';
+            }
+            const rect = el.getBoundingClientRect();
+            const overflow = rect.right - window.innerWidth;
+            if (overflow > 1) {
+                offenders.push({ el, overflow });
+            }
+        });
+
+        offenders.sort((a, b) => b.overflow - a.overflow);
+        const worst = offenders.slice(0, 10);
+        worst.forEach(({ el }) => {
+            el.style.outline = '2px solid red';
+        });
+
+        if (worst.length === 0) {
+            console.log('Overflow check: no offenders found.');
+            return;
+        }
+
+        console.log('Overflow check: worst offenders');
+        worst.forEach(({ el, overflow }) => {
+            console.log(
+                `${overflow.toFixed(1)}px`,
+                el.tagName,
+                el.className || '(no class)',
+                el.id ? `#${el.id}` : '(no id)'
+            );
+        });
+    }
+
+    handleImportDragOver(event) {
+        event.preventDefault();
+        if (!this.dom.importExportModal) return;
+        this.dom.importExportModal.classList.add('drag-active');
+    }
+
+    handleImportDragLeave(event) {
+        event.preventDefault();
+        if (!this.dom.importExportModal) return;
+        if (event.currentTarget && event.relatedTarget && event.currentTarget.contains(event.relatedTarget)) {
+            return;
+        }
+        this.dom.importExportModal.classList.remove('drag-active');
+    }
+
+    handleImportDrop(event) {
+        event.preventDefault();
+        if (!this.dom.importExportModal) return;
+        this.dom.importExportModal.classList.remove('drag-active');
+        const file = event.dataTransfer?.files?.[0];
+        if (!file || !this.dom.importFileInput) return;
+        this.setActiveImportExportTab('import');
+        const dataTransfer = new DataTransfer();
+        dataTransfer.items.add(file);
+        this.dom.importFileInput.files = dataTransfer.files;
+        this.updateImportFileName();
+        if (this.dom.importSummary) {
+            this.dom.importSummary.textContent = `Selected file: ${file.name}`;
+            this.dom.importSummary.classList.remove('is-hidden');
+        }
     }
 
     closeModal(modalElement) {
         if (modalElement) {
             modalElement.classList.remove('active');
+            modalElement.classList.remove('drag-active');
+        }
+        if (!document.querySelector('.modal.active')) {
+            document.body.classList.remove('modal-open');
         }
     }
 
@@ -622,18 +894,22 @@ class PromptForgeApp {
      * Utility Functions
      */
     createPreview(content) {
-        const maxLength = 120;
-        return content.length > maxLength ? content.substring(0, maxLength) + '...' : content;
+        const collapsed = String(content || '').replace(/\s+/g, ' ').trim();
+        return collapsed.slice(0, 140);
     }
     
     formatDate(date) {
+        if (!date) return 'never';
+        const parsedDate = date instanceof Date ? date : new Date(date);
+        if (Number.isNaN(parsedDate.getTime())) return 'never';
+
         const now = new Date();
-        const diffInDays = Math.floor((now - date) / (1000 * 60 * 60 * 24));
-        const diffInHours = Math.floor((now - date) / (1000 * 60 * 60));
-        const diffInMinutes = Math.floor((now - date) / (1000 * 60));
+        const diffInDays = Math.floor((now - parsedDate) / (1000 * 60 * 60 * 24));
+        const diffInHours = Math.floor((now - parsedDate) / (1000 * 60 * 60));
+        const diffInMinutes = Math.floor((now - parsedDate) / (1000 * 60));
 
         if (diffInDays > 30) {
-            return date.toLocaleDateString();
+            return parsedDate.toLocaleDateString();
         } else if (diffInDays > 0) {
             return `${diffInDays} day${diffInDays > 1 ? 's' : ''} ago`;
         } else if (diffInHours > 0) {
@@ -660,6 +936,9 @@ class PromptForgeApp {
         const savedSettings = localStorage.getItem('promptForgeAiSettings');
         if (savedSettings) {
             this.aiSettings = JSON.parse(savedSettings);
+            if (!this.aiSettings.enhancementPrompt) {
+                this.aiSettings.enhancementPrompt = this.defaultEnhancementPrompt;
+            }
             if (this.dom.openrouterApiKey) {
                 this.dom.openrouterApiKey.value = this.aiSettings.apiKey;
             }
@@ -670,6 +949,8 @@ class PromptForgeApp {
             if (this.aiSettings.apiKey) {
                 this.fetchAiModels();
             }
+        } else if (this.dom.enhancementPrompt) {
+            this.dom.enhancementPrompt.value = this.defaultEnhancementPrompt;
         }
     }
 
@@ -747,7 +1028,7 @@ class PromptForgeApp {
             apiKey: this.dom.openrouterApiKey.value.trim(),
             model: this.dom.aiModelSelect.value,
             enhancementPrompt: this.dom.enhancementPrompt.value.trim() || 
-                             'You are an expert prompt engineer. Improve the following prompt for clarity, specificity and effectiveness while maintaining its original intent:'
+                             this.defaultEnhancementPrompt
         };
         
         localStorage.setItem('promptForgeAiSettings', JSON.stringify(this.aiSettings));
@@ -769,6 +1050,10 @@ class PromptForgeApp {
         }
         
         try {
+            this.previousPromptContent = currentContent;
+            if (this.dom.undoEnhanceBtn) {
+                this.dom.undoEnhanceBtn.disabled = true;
+            }
             this.dom.enhancePromptBtn.disabled = true;
             this.dom.enhancePromptBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Enhancing...';
             
@@ -797,16 +1082,30 @@ class PromptForgeApp {
             
             if (enhancedContent) {
                 this.dom.promptContentInput.value = enhancedContent;
+                if (this.dom.undoEnhanceBtn) {
+                    this.dom.undoEnhanceBtn.disabled = false;
+                }
                 this.showNotification('Prompt enhanced successfully!', 'success');
             } else {
                 throw new Error('No enhanced content returned');
             }
         } catch (error) {
+            this.previousPromptContent = null;
             this.showNotification(`Enhancement failed: ${error.message}`, 'error');
         } finally {
             this.dom.enhancePromptBtn.disabled = false;
             this.dom.enhancePromptBtn.innerHTML = '<i class="fas fa-magic"></i> Enhance with AI';
         }
+    }
+
+    undoEnhancement() {
+        if (!this.previousPromptContent) return;
+        this.dom.promptContentInput.value = this.previousPromptContent;
+        this.previousPromptContent = null;
+        if (this.dom.undoEnhanceBtn) {
+            this.dom.undoEnhanceBtn.disabled = true;
+        }
+        this.showNotification('Reverted to the previous prompt.', 'success');
     }
 
     showNotification(message, type = 'success', duration = 3000) {
