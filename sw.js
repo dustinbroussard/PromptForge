@@ -1,4 +1,4 @@
-const CACHE_NAME = 'promptforge-cache-v2';
+const CACHE_NAME = 'promptforge-cache-v3';
 const PRECACHE_URLS = [
   '/',
   '/index.html',
@@ -73,6 +73,27 @@ self.addEventListener('fetch', event => {
         return;
     }
     
+    const requestUrl = new URL(event.request.url);
+    const isThemeCriticalAsset = requestUrl.origin === self.location.origin
+        && (requestUrl.pathname === '/style.css' || requestUrl.pathname === '/script.js');
+
+    if (isThemeCriticalAsset) {
+        event.respondWith(
+            fetch(event.request)
+                .then(res => {
+                    if (res && res.status === 200) {
+                        const responseToCache = res.clone();
+                        caches.open(CACHE_NAME).then(cache => {
+                            cache.put(event.request, responseToCache);
+                        });
+                    }
+                    return res;
+                })
+                .catch(() => caches.match(event.request))
+        );
+        return;
+    }
+
     // For all other requests (our core assets)
     event.respondWith(
         caches.match(event.request).then(response => {

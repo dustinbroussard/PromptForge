@@ -140,24 +140,40 @@ class PromptForgeApp {
         }
     }
 
+    getPreferredTheme() {
+        let storedTheme = null;
+        try {
+            storedTheme = localStorage.getItem('theme');
+        } catch (err) {
+            storedTheme = null;
+        }
+
+        if (storedTheme === 'default-light' || storedTheme === 'default-dark') {
+            return storedTheme;
+        }
+
+        const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        return prefersDark ? 'default-dark' : 'default-light';
+    }
+
     applyTheme() {
-        const savedTheme = localStorage.getItem('theme') || 'default-dark';
-        document.documentElement.setAttribute('data-theme', savedTheme);
+        const theme = this.getPreferredTheme();
+        document.documentElement.dataset.theme = theme;
         const meta = document.querySelector('meta[name="theme-color"]');
         if (meta) {
-            meta.setAttribute('content', savedTheme === 'default-light' ? '#ffffff' : '#000000');
+            meta.setAttribute('content', theme === 'default-light' ? '#ffffff' : '#000000');
         }
         if (this.dom.themeToggleBtn) {
-            this.dom.themeToggleBtn.innerHTML = savedTheme === 'default-dark'
+            this.dom.themeToggleBtn.innerHTML = theme === 'default-dark'
                 ? '<i class="fas fa-sun"></i>'
                 : '<i class="fas fa-moon"></i>';
         }
     }
 
     toggleTheme() {
-        const currentTheme = document.documentElement.getAttribute('data-theme') || 'default-dark';
+        const currentTheme = document.documentElement.dataset.theme || 'default-dark';
         const newTheme = currentTheme === 'default-dark' ? 'default-light' : 'default-dark';
-        document.documentElement.setAttribute('data-theme', newTheme);
+        document.documentElement.dataset.theme = newTheme;
         localStorage.setItem('theme', newTheme);
         const meta = document.querySelector('meta[name="theme-color"]');
         if (meta) {
