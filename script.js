@@ -26,6 +26,7 @@ class PromptForgeApp {
             model: '',
             enhancementPrompt: this.defaultEnhancementPrompt
         };
+        this.lastFocusedElement = null;
 
         // Initialize DOM elements
             this.dom = {
@@ -461,7 +462,7 @@ class PromptForgeApp {
         }
         this.dom.newEditModalTitle.textContent = 'New Prompt';
         this.dom.promptForm.reset();
-        this.dom.newEditModal.classList.add('active');
+        this.openModal(this.dom.newEditModal);
     }
 
     showEditPromptModal(id) {
@@ -481,7 +482,7 @@ class PromptForgeApp {
         this.dom.promptTitleInput.value = promptToEdit.title;
         this.dom.promptContentInput.value = promptToEdit.content;
         this.dom.promptTagsInput.value = promptToEdit.tags.join(', ');
-        this.dom.newEditModal.classList.add('active');
+        this.openModal(this.dom.newEditModal);
         this.closeModal(this.dom.promptDetailModal);
     }
 
@@ -639,7 +640,7 @@ class PromptForgeApp {
         this.dom.detailEditBtn.onclick = () => this.showEditPromptModal(id);
         this.dom.detailDeleteBtn.onclick = () => this.deletePrompt(id);
         
-        this.dom.promptDetailModal.classList.add('active');
+        this.openModal(this.dom.promptDetailModal);
     }
 
     usePrompt(id) {
@@ -667,7 +668,7 @@ class PromptForgeApp {
             this.dom.importSummary.classList.add('is-hidden');
         }
         document.body.classList.add('modal-open');
-        this.dom.importExportModal.classList.add('active');
+        this.openModal(this.dom.importExportModal);
     }
 
     setActiveImportExportTab(tab) {
@@ -896,6 +897,23 @@ class PromptForgeApp {
         }
     }
 
+    openModal(modalElement) {
+        if (!modalElement) return;
+        if (!modalElement.classList.contains('active')) {
+            const activeElement = document.activeElement;
+            this.lastFocusedElement = activeElement instanceof HTMLElement ? activeElement : null;
+        }
+        modalElement.classList.add('active');
+        this.focusModal(modalElement);
+    }
+
+    focusModal(modalElement) {
+        const focusTarget = modalElement.querySelector('input, select, textarea, button, [tabindex]:not([tabindex="-1"])');
+        if (focusTarget && typeof focusTarget.focus === 'function') {
+            focusTarget.focus({ preventScroll: true });
+        }
+    }
+
     closeModal(modalElement) {
         if (modalElement) {
             modalElement.classList.remove('active');
@@ -903,6 +921,10 @@ class PromptForgeApp {
         }
         if (!document.querySelector('.modal.active')) {
             document.body.classList.remove('modal-open');
+            if (this.lastFocusedElement && typeof this.lastFocusedElement.focus === 'function') {
+                this.lastFocusedElement.focus({ preventScroll: true });
+            }
+            this.lastFocusedElement = null;
         }
     }
 
@@ -972,7 +994,7 @@ class PromptForgeApp {
 
     showAiSettingsModal() {
         if (this.dom.aiSettingsModal) {
-            this.dom.aiSettingsModal.classList.add('active');
+            this.openModal(this.dom.aiSettingsModal);
         }
     }
 
