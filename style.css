@@ -624,6 +624,23 @@ body {
     resize: vertical;
 }
 
+.ai-output {
+    min-height: 180px;
+    background: var(--bg-card);
+}
+
+.ai-output[readonly] {
+    color: var(--text-primary);
+}
+
+.ai-modal-actions {
+    flex-wrap: wrap;
+}
+
+.ai-generate-btn {
+    margin-right: auto;
+}
+
 .form-actions {
     display: flex;
     justify-content: flex-end;

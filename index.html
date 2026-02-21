@@ -109,6 +109,9 @@
                 <h1>PromptForge</h1>
             </div>
             <div class="header-actions">
+                <button class="header-btn header-btn-text" id="ai-assistant-btn" title="AI Prompt Lab">
+                    <i class="fas fa-wand-magic-sparkles"></i>
+                </button>
                 <button class="header-btn header-btn-text" id="import-export-btn" title="Import / Export">
                     <i class="fas fa-file-import"></i>
                 </button>
@@ -214,6 +217,46 @@
                         <button type="submit" id="save-ai-settings" class="action-btn primary">Save Settings</button>
                     </div>
                 </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI Prompt Modal -->
+    <div id="ai-assistant-modal" class="modal">
+        <div class="modal-overlay"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">AI Prompt Lab</h2>
+                <button class="close-modal"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="ai-prompt-input">Your prompt or request</label>
+                    <textarea id="ai-prompt-input" rows="6" placeholder="Describe the prompt you want to create or enhance..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="ai-prompt-output">AI Result</label>
+                    <textarea id="ai-prompt-output" class="ai-output" rows="8" readonly></textarea>
+                    <div id="ai-prompt-status" class="helper-text" aria-live="polite"></div>
+                </div>
+                <div class="form-actions ai-modal-actions">
+                    <button type="button" id="ai-prompt-generate" class="action-btn secondary ai-generate-btn">
+                        <i class="fas fa-wand-magic-sparkles"></i>
+                        Generate
+                    </button>
+                    <button type="button" id="ai-prompt-accept" class="action-btn primary" disabled>
+                        <i class="fas fa-save"></i>
+                        Accept
+                    </button>
+                    <button type="button" id="ai-prompt-redo" class="action-btn secondary" disabled>
+                        <i class="fas fa-rotate-right"></i>
+                        Redo
+                    </button>
+                    <button type="button" id="ai-prompt-reject" class="action-btn danger" disabled>
+                        <i class="fas fa-times"></i>
+                        Reject
+                    </button>
+                </div>
             </div>
         </div>
     </div>

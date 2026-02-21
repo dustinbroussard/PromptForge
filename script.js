@@ -12,6 +12,7 @@ let deferredPrompt;
 class PromptForgeApp {
     constructor() {
         this.defaultEnhancementPrompt = 'You are an expert prompt engineer. Improve the prompt for clarity and effectiveness while preserving intent. Return only the improved prompt text.';
+        this.defaultAiModel = 'openrouter/free';
         this.prompts = [];
         this.installPromptShown = false;
         this.filteredPrompts = [];
@@ -23,7 +24,7 @@ class PromptForgeApp {
         this.previousPromptContent = null;
         this.aiSettings = {
             apiKey: '',
-            model: '',
+            model: this.defaultAiModel,
             enhancementPrompt: this.defaultEnhancementPrompt
         };
         this.lastFocusedElement = null;
@@ -36,6 +37,7 @@ class PromptForgeApp {
                 newPromptBtn: document.getElementById('new-prompt-btn'),
                 tagSelect: document.getElementById('tag-select'),
                 sortSelect: document.getElementById('sort-select'),
+                aiAssistantBtn: document.getElementById('ai-assistant-btn'),
                 importExportBtn: document.getElementById('import-export-btn'),
                 importExportModal: document.getElementById('import-export-modal'),
                 importExportTabs: document.querySelectorAll('.import-export-tabs .tab-btn'),
@@ -52,6 +54,14 @@ class PromptForgeApp {
                 themeToggleBtn: document.getElementById('theme-toggle-btn'),
                 exportIncludeSettings: document.getElementById('export-include-settings'),
                 undoEnhanceBtn: document.getElementById('undo-enhance-btn'),
+                aiAssistantModal: document.getElementById('ai-assistant-modal'),
+                aiPromptInput: document.getElementById('ai-prompt-input'),
+                aiPromptOutput: document.getElementById('ai-prompt-output'),
+                aiPromptStatus: document.getElementById('ai-prompt-status'),
+                aiPromptGenerate: document.getElementById('ai-prompt-generate'),
+                aiPromptAccept: document.getElementById('ai-prompt-accept'),
+                aiPromptRedo: document.getElementById('ai-prompt-redo'),
+                aiPromptReject: document.getElementById('ai-prompt-reject'),
                 newEditModal: document.getElementById('new-edit-prompt-modal'),
                 newEditModalTitle: document.getElementById('new-edit-modal-title'),
                 promptForm: document.getElementById('prompt-form'),
@@ -324,6 +334,27 @@ class PromptForgeApp {
                 modalContent.addEventListener('drop', (e) => this.handleImportDrop(e));
             }
         }
+        if (this.dom.aiAssistantBtn) {
+            this.dom.aiAssistantBtn.addEventListener('click', () => this.showAiAssistantModal());
+        }
+        if (this.dom.aiAssistantModal) {
+            const overlay = this.dom.aiAssistantModal.querySelector('.modal-overlay');
+            if (overlay) {
+                overlay.addEventListener('click', () => this.closeModal(this.dom.aiAssistantModal));
+            }
+        }
+        if (this.dom.aiPromptGenerate) {
+            this.dom.aiPromptGenerate.addEventListener('click', () => this.generateAiPrompt());
+        }
+        if (this.dom.aiPromptAccept) {
+            this.dom.aiPromptAccept.addEventListener('click', () => this.acceptAiPrompt());
+        }
+        if (this.dom.aiPromptRedo) {
+            this.dom.aiPromptRedo.addEventListener('click', () => this.generateAiPrompt(true));
+        }
+        if (this.dom.aiPromptReject) {
+            this.dom.aiPromptReject.addEventListener('click', () => this.rejectAiPrompt());
+        }
         this.dom.themeToggleBtn.addEventListener('click', () => this.toggleTheme());
         this.dom.promptForm.addEventListener('submit', (e) => {
             e.preventDefault();
@@ -346,6 +377,9 @@ class PromptForgeApp {
             if (e.key === 'Escape') {
                 if (this.dom.importExportModal && this.dom.importExportModal.classList.contains('active')) {
                     this.closeModal(this.dom.importExportModal);
+                }
+                if (this.dom.aiAssistantModal && this.dom.aiAssistantModal.classList.contains('active')) {
+                    this.closeModal(this.dom.aiAssistantModal);
                 }
                 return;
             }
@@ -671,6 +705,143 @@ class PromptForgeApp {
         this.openModal(this.dom.importExportModal);
     }
 
+    showAiAssistantModal() {
+        if (!this.dom.aiAssistantModal) return;
+        if (this.dom.aiPromptInput && !this.dom.aiPromptInput.value.trim()) {
+            const currentContent = this.dom.promptContentInput?.value.trim();
+            if (currentContent) {
+                this.dom.aiPromptInput.value = currentContent;
+            }
+        }
+        this.resetAiPromptState();
+        document.body.classList.add('modal-open');
+        this.openModal(this.dom.aiAssistantModal);
+    }
+
+    resetAiPromptState() {
+        if (this.dom.aiPromptOutput) {
+            this.dom.aiPromptOutput.value = '';
+        }
+        if (this.dom.aiPromptStatus) {
+            this.dom.aiPromptStatus.textContent = '';
+        }
+        this.setAiPromptActionsEnabled(false);
+        if (this.dom.aiPromptGenerate) {
+            this.dom.aiPromptGenerate.disabled = false;
+            this.dom.aiPromptGenerate.innerHTML = '<i class="fas fa-wand-magic-sparkles"></i> Generate';
+        }
+    }
+
+    setAiPromptActionsEnabled(isEnabled) {
+        if (this.dom.aiPromptAccept) this.dom.aiPromptAccept.disabled = !isEnabled;
+        if (this.dom.aiPromptRedo) this.dom.aiPromptRedo.disabled = !isEnabled;
+        if (this.dom.aiPromptReject) this.dom.aiPromptReject.disabled = !isEnabled;
+    }
+
+    async generateAiPrompt(isRedo = false) {
+        if (!this.aiSettings.apiKey || !this.aiSettings.model) {
+            this.showNotification('Please configure AI settings first', 'error');
+            this.showAiSettingsModal();
+            return;
+        }
+
+        const userInput = this.dom.aiPromptInput?.value.trim() || '';
+        if (!userInput) {
+            this.showNotification('Enter a prompt or request to generate', 'error');
+            return;
+        }
+
+        try {
+            if (this.dom.aiPromptStatus) {
+                this.dom.aiPromptStatus.textContent = isRedo ? 'Regenerating with AI...' : 'Generating with AI...';
+            }
+            if (this.dom.aiPromptGenerate) {
+                this.dom.aiPromptGenerate.disabled = true;
+                this.dom.aiPromptGenerate.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Working...';
+            }
+            this.setAiPromptActionsEnabled(false);
+
+            const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${this.aiSettings.apiKey}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    model: this.aiSettings.model,
+                    messages: [
+                        {
+                            role: 'system',
+                            content: this.aiSettings.enhancementPrompt
+                        },
+                        {
+                            role: 'user',
+                            content: userInput
+                        }
+                    ]
+                })
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(errorText || 'API request failed');
+            }
+
+            const result = await response.json();
+            const generatedContent = result.choices[0]?.message?.content?.trim();
+
+            if (!generatedContent) {
+                throw new Error('No AI content returned');
+            }
+
+            if (this.dom.aiPromptOutput) {
+                this.dom.aiPromptOutput.value = generatedContent;
+            }
+            this.setAiPromptActionsEnabled(true);
+            if (this.dom.aiPromptStatus) {
+                this.dom.aiPromptStatus.textContent = 'AI draft ready.';
+            }
+        } catch (error) {
+            if (this.dom.aiPromptStatus) {
+                this.dom.aiPromptStatus.textContent = '';
+            }
+            this.showNotification(`AI generation failed: ${error.message}`, 'error');
+        } finally {
+            if (this.dom.aiPromptGenerate) {
+                this.dom.aiPromptGenerate.disabled = false;
+                this.dom.aiPromptGenerate.innerHTML = '<i class="fas fa-wand-magic-sparkles"></i> Generate';
+            }
+        }
+    }
+
+    acceptAiPrompt() {
+        const generatedContent = this.dom.aiPromptOutput?.value.trim() || '';
+        if (!generatedContent) {
+            this.showNotification('No AI result to accept', 'error');
+            return;
+        }
+
+        const isEditingOpen = this.dom.newEditModal && this.dom.newEditModal.classList.contains('active');
+        if (!isEditingOpen) {
+            this.showNewPromptModal();
+        }
+        if (this.dom.promptContentInput) {
+            this.dom.promptContentInput.value = generatedContent;
+        }
+        this.closeModal(this.dom.aiAssistantModal);
+        this.showNotification('AI prompt accepted. Review and save when ready.', 'success');
+    }
+
+    rejectAiPrompt() {
+        if (this.dom.aiPromptOutput) {
+            this.dom.aiPromptOutput.value = '';
+        }
+        if (this.dom.aiPromptStatus) {
+            this.dom.aiPromptStatus.textContent = 'Draft discarded.';
+        }
+        this.setAiPromptActionsEnabled(false);
+    }
+
     setActiveImportExportTab(tab) {
         if (!this.dom.importExportTabs || !this.dom.importExportSections) return;
         this.dom.importExportTabs.forEach(btn => {
@@ -977,6 +1148,9 @@ class PromptForgeApp {
             if (!this.aiSettings.enhancementPrompt) {
                 this.aiSettings.enhancementPrompt = this.defaultEnhancementPrompt;
             }
+            if (!this.aiSettings.model) {
+                this.aiSettings.model = this.defaultAiModel;
+            }
             if (this.dom.openrouterApiKey) {
                 this.dom.openrouterApiKey.value = this.aiSettings.apiKey;
             }
@@ -988,6 +1162,7 @@ class PromptForgeApp {
                 this.fetchAiModels();
             }
         } else if (this.dom.enhancementPrompt) {
+            this.aiSettings.model = this.defaultAiModel;
             this.dom.enhancementPrompt.value = this.defaultEnhancementPrompt;
         }
     }
