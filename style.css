@@ -3,7 +3,7 @@
     --bg-primary: #000000;
     --bg-secondary: #0a0a0a;
     --bg-tertiary: #111111;
-    --bg-card: #1a1a1a;
+    --bg-card: #000000;
     --bg-hover: #222222;
     --bg-active: #2a2a2a;
     --text-primary: #ffffff;
@@ -22,8 +22,8 @@
     --danger: #ff4444;
     --danger-hover: #ff6666;
     --info: #00aaff;
-    --gradient-primary: linear-gradient(135deg, #000000 0%, #1a1a1a 100%);
-    --gradient-card: linear-gradient(135deg, #111111 0%, #1a1a1a 100%);
+    --gradient-primary: linear-gradient(135deg, #000000 0%, #111111 100%);
+    --gradient-card: linear-gradient(135deg, #000000 0%, #111111 100%);
 }
 
 /* Default Light Theme Variables */
@@ -414,7 +414,7 @@ body {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
-    margin-top: 8px;
+    margin-top: 4px;
 }
 
 .prompt-tag {
@@ -430,7 +430,7 @@ body {
     display: flex;
     justify-content: flex-end;
     gap: 8px;
-    margin-top: 16px;
+    margin-top: 8px;
 }
 
 .action-btn {
@@ -915,5 +915,9 @@ body {
 @media (max-width: 480px) {
     .prompts-grid {
         grid-template-columns: 1fr;
+    }
+
+    .prompt-preview {
+        display: none;
     }
 }
