@@ -1,5 +1,5 @@
 (function(root) {
-    const EXPORT_TYPE = 'promptforge.export';
+    const EXPORT_TYPE = 'promptbox.export';
     const EXPORT_VERSION = 2;
 
     function getRandomUUID() {
@@ -150,6 +150,6 @@
     if (typeof module !== 'undefined' && module.exports) {
         module.exports = api;
     } else {
-        root.PromptForgeImportExport = api;
+        root.PromptBoxImportExport = api;
     }
 })(typeof globalThis !== 'undefined' ? globalThis : window);

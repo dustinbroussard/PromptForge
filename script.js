@@ -1,15 +1,15 @@
 /**
- * PromptForge - Modern Prompt Management System
+ * PromptBox - Modern Prompt Management System
  * Enhanced and Combined Version
  *
- * This script manages the full functionality of the PromptForge single-page application.
+ * This script manages the full functionality of the PromptBox single-page application.
  * It handles local storage for persistence, UI rendering, event handling, and all
  * prompt-related operations (create, read, update, delete).
  */
 
 let deferredPrompt;
 
-class PromptForgeApp {
+class PromptBoxApp {
     constructor() {
         this.defaultEnhancementPrompt = 'You are an expert prompt engineer. Improve the prompt for clarity and effectiveness while preserving intent. Return only the improved prompt text.';
         this.defaultAiModel = 'openrouter/free';
@@ -124,8 +124,8 @@ class PromptForgeApp {
             installModal.className = 'install-modal';
             installModal.innerHTML = `
                 <div class="install-modal-content">
-                    <h3>Install PromptForge</h3>
-                    <p>Add PromptForge to your home screen for quick access and offline use!</p>
+                    <h3>Install PromptBox</h3>
+                    <p>Add PromptBox to your home screen for quick access and offline use!</p>
                     <div class="install-actions">
                         <button id="install-button" class="action-btn primary">Install</button>
                         <button id="cancel-install" class="action-btn secondary">Not Now</button>
@@ -204,7 +204,7 @@ class PromptForgeApp {
         const storedPrompts = localStorage.getItem('promptForgePrompts');
         if (storedPrompts) {
             const parsed = JSON.parse(storedPrompts);
-            const normalized = PromptForgeImportExport.normalizeImportedData(parsed).prompts;
+            const normalized = PromptBoxImportExport.normalizeImportedData(parsed).prompts;
             this.prompts = normalized;
         } else {
             // Load sample data if local storage is empty
@@ -860,15 +860,15 @@ class PromptForgeApp {
 
     exportPrompts(options = {}) {
         const settingsBundle = options.includeSettings === true ? { aiSettings: this.aiSettings } : undefined;
-        const exportData = PromptForgeImportExport.createExportBundle(this.prompts, settingsBundle);
-        this.downloadExportData(exportData, 'promptforge_prompts.json');
+        const exportData = PromptBoxImportExport.createExportBundle(this.prompts, settingsBundle);
+        this.downloadExportData(exportData, 'promptbox_prompts.json');
         this.showNotification('Prompts exported successfully!', 'success');
     }
 
     exportSinglePromptById(id) {
         const prompt = this.prompts.find(p => p.id === id);
         if (!prompt) return;
-        const exportData = PromptForgeImportExport.createExportBundle([prompt]);
+        const exportData = PromptBoxImportExport.createExportBundle([prompt]);
         const filename = this.buildPromptFilename(prompt.title);
         this.downloadExportData(exportData, filename);
         this.showNotification('Prompt exported successfully!', 'success');
@@ -918,9 +918,9 @@ class PromptForgeApp {
         reader.onload = (event) => {
             try {
                 const imported = JSON.parse(event.target.result);
-                const normalized = PromptForgeImportExport.normalizeImportedData(imported);
+                const normalized = PromptBoxImportExport.normalizeImportedData(imported);
                 const summary = this.computeImportSummary(this.prompts, normalized.prompts, mode);
-                this.prompts = PromptForgeImportExport.applyImport(this.prompts, normalized.prompts, mode);
+                this.prompts = PromptBoxImportExport.applyImport(this.prompts, normalized.prompts, mode);
                 if (this.currentPromptId && !this.prompts.some(p => p.id === this.currentPromptId)) {
                     this.currentPromptId = null;
                 }
@@ -1334,5 +1334,5 @@ class PromptForgeApp {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    window.promptForgeApp = new PromptForgeApp();
+    window.promptForgeApp = new PromptBoxApp();
 });

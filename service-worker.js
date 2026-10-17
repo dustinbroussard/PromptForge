@@ -1,4 +1,4 @@
-const CACHE_NAME = 'promptforge-cache-v4';
+const CACHE_NAME = 'promptbox-cache-v4';
 const PRECACHE_URLS = [
   '/',
   '/index.html',

@@ -48,7 +48,7 @@ test('imports legacy array and normalizes fields', () => {
 
 test('imports new v2 object and preserves settings', () => {
     const payload = {
-        type: 'promptforge.export',
+        type: 'promptbox.export',
         version: 2,
         prompts: [
             {
@@ -143,7 +143,7 @@ test('exports as v2 bundle', () => {
     const bundle = createExportBundle([
         { id: 1, title: 'T', content: 'C' }
     ]);
-    assert.strictEqual(bundle.type, 'promptforge.export');
+    assert.strictEqual(bundle.type, 'promptbox.export');
     assert.strictEqual(bundle.version, 2);
     assert.strictEqual(bundle.prompts.length, 1);
     assert.strictEqual(bundle.prompts[0].id, '1');

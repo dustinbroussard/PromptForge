@@ -1,6 +1,6 @@
-# PromptForge
+# PromptBox
 
-PromptForge is a prompt management PWA for creating, organizing, and enhancing prompts.
+PromptBox is a prompt management PWA for creating, organizing, and enhancing prompts.
 
 ## Features
 

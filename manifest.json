@@ -1,6 +1,6 @@
 {
-  "name": "PromptForge",
-  "short_name": "PromptForge",
+  "name": "PromptBox",
+  "short_name": "PromptBox",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#000000",
